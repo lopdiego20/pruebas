@@ -1,0 +1,47 @@
+.smooth-navbar {
+                    background: #f8f9fe;  /* Fondo gris azulado muy suave */
+                    backdrop-filter: blur(8px);
+                    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
+                    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+                    padding: 0.8rem 1.5rem;
+                }
+                
+                .navbar-icon-container {
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-right: 12px;
+                    background: rgba(224, 234, 255, 0.5);  /* Azul pastel muy suave */
+                    border-radius: 8px;
+                    border: 1px solid rgba(206, 212, 255, 0.3);
+                }
+                
+                .navbar-icon {
+                    color: #6b75ca;  /* Azul suave */
+                }
+                
+                .navbar-title {
+                    font-weight: 600;
+                    font-size: 1.2rem;
+                    color: #5a67d8;  /* Azul un poco más intenso */
+                    letter-spacing: 0.3px;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                }
+                
+                .logout-link {
+                    color: #718096;  /* Gris azulado */
+                    font-weight: 500;
+                    padding: 0.4rem 0.9rem;
+                    border-radius: 6px;
+                    transition: all 0.25s ease;
+                    font-size: 0.9rem;
+                    border: 1px solid rgba(0, 0, 0, 0.03);
+                    
+                    &:hover {
+                        color: #e53e3e;  /* Rojo suave */
+                        background: rgba(229, 62, 62, 0.05);
+                        border: 1px solid rgba(229, 62, 62, 0.1);
+                    }
+                }

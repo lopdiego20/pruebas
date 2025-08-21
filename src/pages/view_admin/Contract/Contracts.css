@@ -1,0 +1,26 @@
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+  }
+  
+  .table td {
+    vertical-align: middle;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  .bg-primary-soft {
+    background-color: rgba(13, 110, 253, 0.1);
+  }
+  
+  .rounded-lg {
+    border-radius: 0.75rem !important;
+  }
+  
+  .form-control-lg, .form-select-lg {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
