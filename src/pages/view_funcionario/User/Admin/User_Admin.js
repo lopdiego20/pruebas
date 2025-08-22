@@ -65,33 +65,33 @@ export default function TablaUsuarios() {
   };
 
   // Crear usuarios
-  const crearUsuario = async () => {
-    try {
-      const res = await api.post("/users", form);
-      setMostrarModal(false);
-      setForm({
-        name: "",
-        lastname: "",
-        idcard: "",
-        telephone: "",
-        email: "",
-        password: "",
-        role: "admin",
-        post: "Administrador",
-        state: "Activo",
-      });
-      obtenerUsuarios();
-      toast.success(`Usuario exitosamente creado`, {
-        description: res?.data?.message || "Usuario creado exitosamente",
-      });
-    } catch (err) {
-      const mensajeServidor =
-        err.response?.data?.message || "Error desconocido";
-      toast.success(`Error al crear un usuario`, {
-        description: mensajeServidor,
-      });
-    }
-  };
+  // const crearUsuario = async () => {
+  //   try {
+  //     const res = await api.post("/users", form);
+  //     setMostrarModal(false);
+  //     setForm({
+  //       name: "",
+  //       lastname: "",
+  //       idcard: "",
+  //       telephone: "",
+  //       email: "",
+  //       password: "",
+  //       role: "admin",
+  //       post: "Administrador",
+  //       state: "Activo",
+  //     });
+  //     obtenerUsuarios();
+  //     toast.success(`Usuario exitosamente creado`, {
+  //       description: res?.data?.message || "Usuario creado exitosamente",
+  //     });
+  //   } catch (err) {
+  //     const mensajeServidor =
+  //       err.response?.data?.message || "Error desconocido";
+  //     toast.success(`Error al crear un usuario`, {
+  //       description: mensajeServidor,
+  //     });
+  //   }
+  // };
   // Abril modal para crear Uusario
   const abrirModalCrearUsuario = () => {
     setForm({
@@ -162,27 +162,27 @@ export default function TablaUsuarios() {
   };
 
   // Borrar
-  const eliminarUsuario = async (id) => {
-    const confirmar = window.confirm(
-      "¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer."
-    );
+  // // const eliminarUsuario = async (id) => {
+  // //   const confirmar = window.confirm(
+  // //     "¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer."
+  // //   );
 
-    if (!confirmar) return;
+  // //   if (!confirmar) return;
 
-    try {
-      const res = await api.delete(`/users/${id}`);
-      obtenerUsuarios(); // recarga la tabla
-      toast.success(
-        "Usuario eliminado exitosamente",
-        { description: res.data?.message } || "Usuario eliminado"
-      );
-    } catch (err) {
-      toast.error("No se puedo eliminar el usuairo", {
-        description:
-          err?.response?.data?.message || "No se pudo eliminar el usuario",
-      });
-    }
-  };
+  // //   try {
+  // //     const res = await api.delete(`/users/${id}`);
+  // //     obtenerUsuarios(); // recarga la tabla
+  // //     toast.success(
+  // //       "Usuario eliminado exitosamente",
+  // //       { description: res.data?.message } || "Usuario eliminado"
+  // //     );
+  // //   } catch (err) {
+  // //     toast.error("No se puedo eliminar el usuairo", {
+  // //       description:
+  // //         err?.response?.data?.message || "No se pudo eliminar el usuario",
+  // //     });
+  //   }
+  // };
   return (
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh" }}>
       <Header />
