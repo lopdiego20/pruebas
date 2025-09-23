@@ -12,15 +12,14 @@ import {
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header/Header';
 
-const userName = localStorage.getItem("firsName"); // o desde props/context
 
-export default function AdminDashboard() {
+export default function ContratistaDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
-    if (!token || role.toLowerCase() !== 'admin') {
+    if (!token || role.toLowerCase() !== 'funcionario') {
       navigate('/');
     }
   }, [navigate]);
@@ -38,8 +37,8 @@ export default function AdminDashboard() {
     <Row className="g-4 mb-4">
       <Col>
         <div className="d-flex align-items-center">
-          <h2 className="mb-0 fw-bold">👋 Hola, {userName || "firsName"}</h2>
-          <span className="badge bg-primary ms-3">Admin</span>
+          <h2 className="mb-0 fw-bold">👋 Hola, Contratista</h2>
+          <span className="badge bg-primary ms-3">Contratista</span>
         </div>
         <p className="text-muted mb-0">Aquí puedes monitorear el estado del sistema y gestionar los recursos.</p>
       </Col>

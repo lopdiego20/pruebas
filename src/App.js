@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 // Ruta del admin
 import AdminDashboard from "./pages/AdminDashboard";
 import FuncionaryDashboard from "./pages/FuncionaryDashboard";
+import ContratistaDashboard from "./pages/ContratistaDashboard";
 // Usuarios
 import User_Admin from "./pages/view_admin/User/Admin/User_Admin";
 import User_Contract from "./pages/view_admin/User/Contract/User_Contract";
@@ -25,6 +26,7 @@ function DashboardSelector() {
   const role = localStorage.getItem("role");
   if (role === "admin") return <AdminDashboard />;
   if (role === "funcionario") return <FuncionaryDashboard />;
+  if (role === "contratista") return <ContratistaDashboard />;
   // Puedes agregar más roles aquí
   return <div>No autorizado</div>;
 }
