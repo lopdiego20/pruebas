@@ -16,7 +16,7 @@ export default function Login() {
     const loadingToast = toast.loading('Verificando credenciales');
 
     try {
-      const res = await axios.post("http://localhost:3000/api/auth/signin", {
+      const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/auth/signin`, {
         email,
         password,
       });

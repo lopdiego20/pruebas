@@ -1,21 +1,23 @@
 // src/pages/DashboardDocumentos.jsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Button, Table, Modal, Form, Card, Badge, Spinner, Accordion } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Header from '../../../components/Header/Header';
+import api from '../../../services/api';
+import '../../../App.css'; // Para la animación spin
 
 const DashboardDocumentos = () => {
   const [documentos, setDocumentos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [formData, setFormData] = useState({
     _id: '',
     description: '',
-    state: '',
-    retention_time: '',
+    state: 'Activo',
+    retention_time: '5',
     version: 1,
     ip: window.location.hostname,
     user_contrac: '',
@@ -25,66 +27,121 @@ const DashboardDocumentos = () => {
   const [loading, setLoading] = useState(true);
   const [activeAccordion, setActiveAccordion] = useState(null);
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
 
+  // Verificar autenticación al cargar el componente
   useEffect(() => {
-    const fetchData = async () => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    
+    if (!token) {
+      toast.error('Sesión expirada');
+      navigate('/');
+      return;
+    }
+    
+    if (role && !['admin', 'funcionario'].includes(role.toLowerCase())) {
+      toast.error('No tienes permisos para acceder a esta sección');
+      navigate('/');
+      return;
+    }
+  }, [navigate]);
+
+  const fetchData = async () => {
       try {
+        setLoading(true);
         await Promise.all([fetchDocumentos(), fetchUsuarios()]);
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error al cargar datos:', error);
+        toast.error('Error al cargar los datos iniciales');
       } finally {
         setLoading(false);
       }
     };
+
+  // Función para refrescar datos
+  const refreshData = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchDocumentos(), fetchUsuarios()]);
+      toast.success('Datos actualizados correctamente');
+    } catch (error) {
+      toast.error('Error al actualizar datos');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
   const fetchDocumentos = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/Documents', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDocumentos(res.data.data);
+      const res = await api.get('/Documents');
+      
+      if (res.data.success) {
+        setDocumentos(res.data.data);
+        console.log('Documentos cargados:', res.data.data);
+      } else {
+        toast.error('Error al cargar documentos');
+        setDocumentos([]);
+      }
     } catch (error) {
       console.error('Error al obtener documentos:', error);
-      toast.error('Error al cargar documentos');
+      toast.error('Error al cargar documentos', {
+        description: error.response?.data?.message || 'Error en el servidor'
+      });
+      setDocumentos([]);
     }
   };
 
   const fetchUsuarios = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/Users', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUsuarios(res.data.data);
+      const res = await api.get('/Users/Contractor?state=true');
+      
+      if (res.data.success) {
+        setUsuarios(res.data.data);
+        console.log('Contractors cargados:', res.data.data);
+      } else {
+        toast.error('Error al cargar contractors');
+        setUsuarios([]);
+      }
     } catch (error) {
-      console.error('Error al obtener usuarios:', error);
-      toast.error('Error al cargar usuarios');
+      console.error('Error al obtener contractors:', error);
+      toast.error('Error al cargar contractors', {
+        description: error.response?.data?.message || 'Error en el servidor'
+      });
+      setUsuarios([]);
     }
   };
 
-  const eliminarDocumento = async (documento) => {
+    const eliminarDocumento = async (documento) => {
     if (!window.confirm('¿Estás seguro de eliminar esta gestión documental?')) return;
 
     try {
-      const usuarioCreador = usuarios.find((u) => u._id === documento.user_create);
+      // Buscar el contractor asociado al documento
+      const contractor = usuarios.find((c) => c._id === documento.userContract);
 
-      if (!usuarioCreador) {
-        toast.error('No se encontró el usuario creador');
+      if (!contractor) {
+        toast.error('No se encontró el contractor asociado al documento');
         return;
       }
 
-      await axios.delete(`http://localhost:3000/api/Documents/${usuarioCreador._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { _id: documento._id }
-      });
+      const loadingToast = toast.loading('Eliminando documento...');
 
-      toast.success('Gestión documental eliminada con éxito');
+      await api.delete(`/Documents/${contractor._id}`);
+      
+      toast.success('Documento eliminado exitosamente', {
+        id: loadingToast
+      });
+      
+      // Recargar la lista de documentos
       fetchDocumentos();
     } catch (error) {
-      console.error(error);
-      toast.error('Error al eliminar la gestión documental');
+      console.error('Error al eliminar documento:', error);
+      toast.error('Error al eliminar documento', {
+        description: error.response?.data?.message || 'Error en el servidor'
+      });
     }
   };
 
@@ -100,8 +157,8 @@ const DashboardDocumentos = () => {
     setModoEdicion(false);
     setFormData({ 
       description: '', 
-      state: '', 
-      retention_time: '', 
+      state: 'Activo', 
+      retention_time: '5', 
       version: 1, 
       ip: window.location.hostname, 
       user_contrac: '', 
@@ -117,7 +174,7 @@ const DashboardDocumentos = () => {
       ...doc, 
       version: doc.version + 1, 
       _id_gestion: doc._id,
-      user_contrac: doc.user_contrac
+      user_contrac: doc.userContract // Corregir el nombre del campo
     });
     setFiles({});
     setShowModal(true);
@@ -125,54 +182,121 @@ const DashboardDocumentos = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.user_contrac) {
+      toast.error('Por favor selecciona un usuario contratista');
+      return;
+    }
+
     const form = new FormData();
     const user_contract = formData.user_contrac;
 
+    // Datos básicos
     form.append('description', formData.description);
-    form.append('state', formData.state || 'Activo');
-    form.append('retention_time', formData.retention_time || 20);
-    form.append('version', formData.version);
+    form.append('state', formData.state === 'Activo' ? true : false);
+    form.append('retentionTime', formData.retention_time || '5');
     form.append('ip', window.location.hostname);
-    if (modoEdicion) form.append('_id', formData._id_gestion);
+    
+    if (modoEdicion) {
+      form.append('_id_gestion', formData._id_gestion);
+    }
 
+    // Archivos requeridos según el backend
     const fileFields = [
-      'filing_letter',
-      'certificate_of_compliance',
-      'signed_certificate_of_compliance',
-      'activity_report',
-      'tax_quality_certificate',
-      'social_security',
+      'filingLetter',
+      'certificateOfCompliance', 
+      'signedCertificateOfCompliance',
+      'activityReport',
+      'taxQualityCertificate',
+      'socialSecurity',
       'rut',
       'rit',
-      'Trainings',
-      'initiation_record',
-      'account_certification',
+      'trainings',
+      'initiationRecord',
+      'accountCertification',
     ];
     
-    fileFields.forEach((field) => {
-      if (files[field]) form.append(field, files[field]);
+    // Mapear nombres del frontend al backend
+    const fieldMapping = {
+      'filing_letter': 'filingLetter',
+      'certificate_of_compliance': 'certificateOfCompliance',
+      'signed_certificate_of_compliance': 'signedCertificateOfCompliance',
+      'activity_report': 'activityReport',
+      'tax_quality_certificate': 'taxQualityCertificate',
+      'social_security': 'socialSecurity',
+      'rut': 'rut',
+      'rit': 'rit',
+      'Trainings': 'trainings',
+      'initiation_record': 'initiationRecord',
+      'account_certification': 'accountCertification',
+    };
+
+    // Agregar archivos al FormData
+    Object.keys(files).forEach((fieldName) => {
+      if (files[fieldName]) {
+        const backendFieldName = fieldMapping[fieldName] || fieldName;
+        form.append(backendFieldName, files[fieldName]);
+      }
     });
 
-    try {
-      toast.loading(modoEdicion ? 'Actualizando gestión...' : 'Creando gestión...');
-      
-      if (modoEdicion) {
-        await axios.put(`http://localhost:3000/api/Documents/${user_contract}`, form, {
-          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
+    // Validar archivos requeridos para crear (no para editar)
+    if (!modoEdicion) {
+      const missingFiles = fileFields.filter(field => {
+        const frontendField = Object.keys(fieldMapping).find(key => fieldMapping[key] === field);
+        return !files[frontendField];
+      });
+
+      if (missingFiles.length > 0) {
+        toast.error('Faltan archivos requeridos', {
+          description: `Archivos faltantes: ${missingFiles.join(', ')}`
         });
-        toast.success('Gestión documental actualizada');
-      } else {
-        await axios.post(`http://localhost:3000/api/Documents/${user_contract}`, form, {
-          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
-        });
-        toast.success('Gestión documental creada');
+        return;
       }
+    }
+
+    try {
+      const loadingToast = toast.loading(modoEdicion ? 'Actualizando documento...' : 'Creando documento...');
       
-      setShowModal(false);
-      fetchDocumentos();
+      let response;
+      if (modoEdicion) {
+        response = await api.put(`/Documents/${user_contract}`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        response = await api.post(`/Documents/${user_contract}`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
+      if (response.data.success) {
+        toast.success(modoEdicion ? 'Documento actualizado exitosamente' : 'Documento creado exitosamente', {
+          id: loadingToast
+        });
+        
+        setShowModal(false);
+        setFormData({
+          description: '', 
+          state: 'Activo', 
+          retention_time: '5', 
+          version: 1, 
+          ip: window.location.hostname, 
+          user_contrac: '', 
+          _id_gestion: '' 
+        });
+        setFiles({});
+        
+        // Recargar datos
+        fetchDocumentos();
+      } else {
+        toast.error('Error en la respuesta del servidor', {
+          id: loadingToast
+        });
+      }
     } catch (error) {
-      console.error(error);
-      toast.error('Error al guardar la gestión documental');
+      console.error('Error al procesar documento:', error);
+      toast.error(modoEdicion ? 'Error al actualizar documento' : 'Error al crear documento', {
+        description: error.response?.data?.message || 'Error en el servidor'
+      });
     }
   };
 
@@ -196,14 +320,29 @@ const DashboardDocumentos = () => {
       
       <div className="container-fluid py-4 px-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="mb-0 fw-bold text-primary">
-            <i className="bi bi-folder me-2"></i>
-            Gestión Documental
-          </h2>
-          <Button variant="primary" onClick={abrirModalCrear}>
-            <i className="bi bi-plus-circle me-2"></i>
-            Agregar Gestión
-          </Button>
+          <div>
+            <h2 className="mb-0 fw-bold text-primary">
+              <i className="bi bi-folder me-2"></i>
+              Gestión Documental
+            </h2>
+            <p className="text-muted mb-0 mt-1">
+              Administra y crea gestiones documentales del sistema
+            </p>
+          </div>
+          <div className="d-flex gap-2">
+            <Button 
+              variant="outline-primary" 
+              onClick={refreshData}
+              disabled={refreshing}
+            >
+              <i className={`bi bi-arrow-clockwise me-2 ${refreshing ? 'spin' : ''}`}></i>
+              {refreshing ? 'Actualizando...' : 'Actualizar'}
+            </Button>
+            <Button variant="primary" onClick={abrirModalCrear}>
+              <i className="bi bi-plus-circle me-2"></i>
+              Agregar Gestión
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -221,6 +360,17 @@ const DashboardDocumentos = () => {
           </Card>
         ) : (
           <Card className="shadow-sm border-0">
+            <Card.Header className="bg-white border-bottom">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="mb-0 text-dark">
+                  <i className="bi bi-table me-2"></i>
+                  Listado de Gestiones Documentales
+                </h5>
+                <Badge bg="primary" className="fs-6">
+                  {documentos.length} registro{documentos.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+            </Card.Header>
             <Card.Body className="p-0">
               <div className="table-responsive">
                 <Table hover className="mb-0">
@@ -236,23 +386,25 @@ const DashboardDocumentos = () => {
                   </thead>
                   <tbody>
                     {documentos.map((doc) => {
-                      const user = usuarios.find((u) => u._id === doc.user_contrac);
+                      // Encontrar contractor usando userContract
+                      const contractor = usuarios.find((c) => c._id === doc.userContract);
+                      const user = contractor?.user;
                       return (
                         <React.Fragment key={doc._id}>
                           <tr>
                             <td>
                               <div className="d-flex align-items-center">
                                 <i className="bi bi-person-circle me-2 text-primary"></i>
-                                {user?.name || 'Sin nombre'}
+                                {user ? `${user.firsName || user.firstName || ''} ${user.lastName || ''}`.trim() : 'Sin nombre'}
                               </div>
                             </td>
                             <td>{doc.description}</td>
                             <td>
-                              <Badge bg={doc.state === 'Activo' ? 'success' : 'secondary'}>
-                                {doc.state}
+                              <Badge bg={doc.state === true ? 'success' : 'secondary'}>
+                                {doc.state === true ? 'Activo' : 'Inactivo'}
                               </Badge>
                             </td>
-                            <td>{doc.retention_time} años</td>
+                            <td>{doc.retentionTime} años</td>
                             <td>
                               <Badge bg="info">v{doc.version}</Badge>
                             </td>
@@ -296,7 +448,7 @@ const DashboardDocumentos = () => {
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold">Usuario Contratista</Form.Label>
+              <Form.Label className="fw-semibold">Usuario Contratista *</Form.Label>
               <Form.Select 
                 name="user_contrac" 
                 value={formData.user_contrac} 
@@ -304,19 +456,17 @@ const DashboardDocumentos = () => {
                 required
                 className="py-2"
               >
-                <option value="">Seleccione un usuario</option>
-                {usuarios
-                  .filter((u) => u.role === 'contratista')
-                  .map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.name}
-                    </option>
-                  ))}
+                <option value="">Seleccione un usuario contratista</option>
+                {usuarios.map((contractor) => (
+                  <option key={contractor._id} value={contractor._id}>
+                    {contractor.user?.firsName || contractor.user?.firstName || ''} {contractor.user?.lastName || ''} - {contractor.user?.email}
+                  </option>
+                ))}
               </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold">Descripción</Form.Label>
+              <Form.Label className="fw-semibold">Descripción *</Form.Label>
               <Form.Control
                 type="text"
                 name="description"
@@ -330,14 +480,14 @@ const DashboardDocumentos = () => {
             <div className="row">
               <div className="col-md-6">
                 <Form.Group className="mb-3">
-                  <Form.Label className="fw-semibold">Estado</Form.Label>
+                  <Form.Label className="fw-semibold">Estado *</Form.Label>
                   <Form.Select 
                     name="state" 
                     value={formData.state} 
                     onChange={handleInputChange}
                     className="py-2"
+                    required
                   >
-                    <option value="">Selecciona un estado</option>
                     <option value="Activo">Activo</option>
                     <option value="Inactivo">Inactivo</option>
                   </Form.Select>
@@ -345,13 +495,16 @@ const DashboardDocumentos = () => {
               </div>
               <div className="col-md-6">
                 <Form.Group className="mb-3">
-                  <Form.Label className="fw-semibold">Tiempo de Retención (años)</Form.Label>
+                  <Form.Label className="fw-semibold">Tiempo de Retención (años) *</Form.Label>
                   <Form.Control
                     type="number"
                     name="retention_time"
                     value={formData.retention_time}
                     onChange={handleInputChange}
-                    placeholder="Ej: 20"
+                    placeholder="Ej: 5"
+                    min="1"
+                    max="50"
+                    required
                   />
                 </Form.Group>
               </div>
@@ -360,20 +513,37 @@ const DashboardDocumentos = () => {
             <Accordion activeKey={activeAccordion} onSelect={setActiveAccordion} className="mb-4">
               <Accordion.Item eventKey="0" className="border-0">
                 <Accordion.Header className="bg-light">
-                  <span className="fw-semibold">Documentos Adjuntos</span>
+                  <span className="fw-semibold">
+                    <i className="bi bi-paperclip me-2"></i>
+                    Documentos Adjuntos {!modoEdicion && <span className="text-danger">*</span>}
+                  </span>
                 </Accordion.Header>
-                <Accordion.Body className="p-0 pt-3">
+                <Accordion.Body className="pt-3">
+                  {!modoEdicion && (
+                    <div className="alert alert-info mb-3">
+                      <i className="bi bi-info-circle me-2"></i>
+                      <strong>Todos los documentos son obligatorios</strong> para crear una nueva gestión documental.
+                    </div>
+                  )}
                   <div className="row">
                     {documentFields.map((field) => (
                       <div className="col-md-6 mb-3" key={field.name}>
                         <Form.Group>
-                          <Form.Label>{field.label}</Form.Label>
+                          <Form.Label>
+                            {field.label}
+                            {!modoEdicion && <span className="text-danger"> *</span>}
+                          </Form.Label>
                           <Form.Control 
                             type="file" 
                             name={field.name} 
                             onChange={handleFileChange} 
                             className="py-2"
+                            accept=".pdf"
+                            required={!modoEdicion}
                           />
+                          <Form.Text className="text-muted">
+                            Solo archivos PDF
+                          </Form.Text>
                         </Form.Group>
                       </div>
                     ))}

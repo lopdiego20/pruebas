@@ -94,10 +94,7 @@ export default function Sidebar() {
           {documentOpen && (
             <div className="submenu">
               <Link to="/Document" onClick={toggleMenu}>
-                <IoDocument /> Documentos por usuario
-              </Link>
-              <Link to="/AllDocuments" onClick={toggleMenu}>
-                <IoDocuments /> Todos los documentos
+                <IoDocument /> Gestión Documental
               </Link>
             </div>
           )}

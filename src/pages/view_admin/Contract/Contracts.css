@@ -24,3 +24,30 @@
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
   }
+
+  /* Estilos para los switches */
+  .form-check-lg .form-check-input {
+    width: 2rem;
+    height: 1rem;
+  }
+
+  .form-check-lg .form-check-label {
+    font-weight: 500;
+  }
+
+  /* Estilos para valores monetarios */
+  .text-currency {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 500;
+  }
+
+  /* Mejora en la tabla responsive */
+  .table-responsive {
+    border-radius: 0.5rem;
+  }
+
+  /* Estilos para badges en la tabla */
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+  }

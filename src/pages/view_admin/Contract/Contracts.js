@@ -26,9 +26,16 @@ export default function Contracts() {
   const [idContrato, setIdContrato] = useState(null);
   const [form, setForm] = useState({
     typeofcontract: "",
-    starteDate: "",
+    startDate: "",
     endDate: "",
     contractNumber: "",
+    periodValue: "",
+    totalValue: "",
+    objectiveContract: "",
+    state: true,
+    extension: false,
+    addiction: false,
+    suspension: false,
   });
   // obtener usuarios de la api
   const obtenerCotratos = async () => {
@@ -52,7 +59,14 @@ export default function Contracts() {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // Convertir el estado a booleano
+    if (name === 'state') {
+      setForm({ ...form, [name]: value === 'true' });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const crearContrato = async () => {
@@ -62,9 +76,16 @@ export default function Contracts() {
       setMostrarModal(false);
       setForm({
         typeofcontract: "",
-        starteDate: "",
+        startDate: "",
         endDate: "",
         contractNumber: "",
+        periodValue: "",
+        totalValue: "",
+        objectiveContract: "",
+        state: true,
+        extension: false,
+        addiction: false,
+        suspension: false,
       });
       toast.success("Contracto creado exitosamente", {
         id: loadingContract,
@@ -82,10 +103,16 @@ export default function Contracts() {
   const abrirModalCrearContrato = () => {
     setForm({
       typeofcontract: "",
-      starteDate: "",
+      startDate: "",
       endDate: "",
       contractNumber: "",
-      state: "",
+      periodValue: "",
+      totalValue: "",
+      objectiveContract: "",
+      state: true,
+      extension: false,
+      addiction: false,
+      suspension: false,
     });
     setModoEdicion(false);
     setIdContrato(null);
@@ -96,11 +123,16 @@ export default function Contracts() {
   const abrirModalEditar = (contract) => {
     setForm({
       typeofcontract: contract.typeofcontract,
-      starteDate: contract.starteDate,
+      startDate: contract.startDate,
       endDate: contract.endDate,
-      starteDate: contract.starteDate,
       contractNumber: contract.contractNumber,
       state: contract.state,
+      periodValue: contract.periodValue,
+      totalValue: contract.totalValue,
+      objectiveContract: contract.objectiveContract,
+      extension: contract.extension || false,
+      addiction: contract.addiction || false,
+      suspension: contract.suspension || false,
     });
     setIdContrato(contract._id);
     setModoEdicion(true);
@@ -190,8 +222,8 @@ export default function Contracts() {
                 {error}
               </Alert>
             ) : (
-              <div className="table-responsive">
-                <Table hover className="mb-0">
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
+                <Table hover className="mb-0" style={{ minWidth: '1200px' }}>
                   <thead className="bg-light">
                     <tr>
                       <th className="ps-4">Tipo de contrato</th>
@@ -199,6 +231,12 @@ export default function Contracts() {
                       <th>Fecha fin</th>
                       <th># Contrato</th>
                       <th>Estado</th>
+                      <th>Valor período</th>
+                      <th>Valor total</th>
+                      <th>Objetivo</th>
+                      <th>Extensión</th>
+                      <th>Adición</th>
+                      <th>Suspensión</th>
                       <th className="pe-4 text-end">Acciones</th>
                     </tr>
                   </thead>
@@ -209,7 +247,7 @@ export default function Contracts() {
                           {contract.typeofcontract}
                         </td>
                         <td>
-                          {new Date(contract.starteDate).toLocaleDateString()}
+                          {new Date(contract.startDate).toLocaleDateString()}
                         </td>
                         <td>
                           {new Date(contract.endDate).toLocaleDateString()}
@@ -222,12 +260,56 @@ export default function Contracts() {
                         <td>
                           <span
                             className={`badge ${
-                              contract.state === "Activo"
+                              contract.state === true
                                 ? "bg-success bg-opacity-10 text-success"
                                 : "bg-danger bg-opacity-10 text-danger"
                             }`}
                           >
-                            {contract.state}
+                            {contract.state ? "Activo" : "Inactivo"}
+                          </span>
+                        </td>
+                        <td className="text-end text-currency">
+                          ${Number(contract.periodValue).toLocaleString()}
+                        </td>
+                        <td className="text-end text-currency">
+                          ${Number(contract.totalValue).toLocaleString()}
+                        </td>
+                        <td>
+                          <div className="text-truncate" style={{ maxWidth: "200px" }} title={contract.objectiveContract}>
+                            {contract.objectiveContract}
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              contract.extension
+                                ? "bg-info bg-opacity-10 text-info"
+                                : "bg-light text-muted"
+                            }`}
+                          >
+                            {contract.extension ? "Sí" : "No"}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              contract.addiction
+                                ? "bg-warning bg-opacity-10 text-warning"
+                                : "bg-light text-muted"
+                            }`}
+                          >
+                            {contract.addiction ? "Sí" : "No"}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              contract.suspension
+                                ? "bg-danger bg-opacity-10 text-danger"
+                                : "bg-light text-muted"
+                            }`}
+                          >
+                            {contract.suspension ? "Sí" : "No"}
                           </span>
                         </td>
                         <td className="pe-4">
@@ -282,30 +364,32 @@ export default function Contracts() {
         <Modal.Body className="pt-0">
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Tipo de Contrato</Form.Label>
+              <Form.Label>Tipo de Contrato *</Form.Label>
               <Form.Select
                 name="typeofcontract"
                 value={form.typeofcontract || ""}
                 onChange={handleChange}
                 className="form-select-lg"
+                required
               >
                 <option value="">Seleccione el tipo de contrato</option>
-                <option value="Contrato termino fijo">
-                  Contrato término fijo
-                </option>
-                <option value="Contrato indefinodo">Contrato indefinido</option>
-                <option value="Contrato obra labor">Contrato obra labor</option>
+                <option value="Presentacion de servicios">Presentación de servicios</option>
+                <option value="Termino fijo">Término fijo</option>
+                <option value="Termino indefinido">Término indefinido</option>
+                <option value="Obra o labor">Obra o labor</option>
+                <option value="Aprendizaje">Aprendizaje</option>
+                <option value="Ocasional o transitorio">Ocasional o transitorio</option>
               </Form.Select>
             </Form.Group>
 
-            <Row className="g-3">
+            <Row className="g-3 mb-3">
               <Col md={6}>
-                <Form.Group controlId="starteDate">
-                  <Form.Label>Fecha de Inicio</Form.Label>
+                <Form.Group controlId="startDate">
+                  <Form.Label>Fecha de Inicio *</Form.Label>
                   <Form.Control
                     type="date"
-                    name="starteDate"
-                    value={form.starteDate?.substring(0, 10) || ""}
+                    name="startDate"
+                    value={form.startDate?.substring(0, 10) || ""}
                     onChange={handleChange}
                     required
                     className="form-control-lg"
@@ -314,7 +398,7 @@ export default function Contracts() {
               </Col>
               <Col md={6}>
                 <Form.Group controlId="endDate">
-                  <Form.Label>Fecha de Fin</Form.Label>
+                  <Form.Label>Fecha de Fin *</Form.Label>
                   <Form.Control
                     type="date"
                     name="endDate"
@@ -328,7 +412,7 @@ export default function Contracts() {
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Número de Contrato</Form.Label>
+              <Form.Label>Número de Contrato *</Form.Label>
               <Form.Control
                 type="number"
                 name="contractNumber"
@@ -340,20 +424,132 @@ export default function Contracts() {
               />
             </Form.Group>
 
+            <Row className="g-3 mb-3">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Valor del Período *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="periodValue"
+                    value={form.periodValue || ""}
+                    onChange={handleChange}
+                    placeholder="Ej: 1000000"
+                    required
+                    className="form-control-lg"
+                  />
+                  <Form.Text className="text-muted">
+                    Valor en pesos colombianos
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Valor Total *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="totalValue"
+                    value={form.totalValue || ""}
+                    onChange={handleChange}
+                    placeholder="Ej: 12000000"
+                    required
+                    className="form-control-lg"
+                  />
+                  <Form.Text className="text-muted">
+                    Valor total del contrato
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
+
             <Form.Group className="mb-3">
-              <Form.Label>Estado</Form.Label>
+              <Form.Label>Objetivo del Contrato *</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="objectiveContract"
+                value={form.objectiveContract || ""}
+                onChange={handleChange}
+                placeholder="Describe el objetivo y alcance del contrato..."
+                required
+                className="form-control-lg"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Estado *</Form.Label>
               <Form.Select
                 name="state"
-                value={form.state || ""}
+                value={form.state?.toString() || "true"}
                 onChange={handleChange}
                 required
                 className="form-select-lg"
               >
-                <option value="">Seleccionar estado</option>
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
               </Form.Select>
             </Form.Group>
+
+            {/* Campos adicionales opcionales */}
+            <div className="border-top pt-3 mt-3">
+              <h6 className="text-muted mb-3">Campos Adicionales (Opcionales)</h6>
+              
+              <Row className="g-3">
+                <Col md={4}>
+                  <Form.Group className="mb-3">
+                    <div className="form-check form-switch">
+                      <Form.Check
+                        type="switch"
+                        id="extension"
+                        name="extension"
+                        checked={form.extension || false}
+                        onChange={(e) => setForm({...form, extension: e.target.checked})}
+                        label="Extensión"
+                        className="form-check-lg"
+                      />
+                      <Form.Text className="text-muted d-block">
+                        ¿Tiene extensión de tiempo?
+                      </Form.Text>
+                    </div>
+                  </Form.Group>
+                </Col>
+                <Col md={4}>
+                  <Form.Group className="mb-3">
+                    <div className="form-check form-switch">
+                      <Form.Check
+                        type="switch"
+                        id="addiction"
+                        name="addiction"
+                        checked={form.addiction || false}
+                        onChange={(e) => setForm({...form, addiction: e.target.checked})}
+                        label="Adición"
+                        className="form-check-lg"
+                      />
+                      <Form.Text className="text-muted d-block">
+                        ¿Tiene adición presupuestal?
+                      </Form.Text>
+                    </div>
+                  </Form.Group>
+                </Col>
+                <Col md={4}>
+                  <Form.Group className="mb-3">
+                    <div className="form-check form-switch">
+                      <Form.Check
+                        type="switch"
+                        id="suspension"
+                        name="suspension"
+                        checked={form.suspension || false}
+                        onChange={(e) => setForm({...form, suspension: e.target.checked})}
+                        label="Suspensión"
+                        className="form-check-lg"
+                      />
+                      <Form.Text className="text-muted d-block">
+                        ¿Está suspendido?
+                      </Form.Text>
+                    </div>
+                  </Form.Group>
+                </Col>
+              </Row>
+            </div>
           </Form>
         </Modal.Body>
         <Modal.Footer className="border-0 pt-0">
