@@ -1,6 +1,5 @@
 // src/pages/view_admin/Documentos/GestionDocumental.jsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Table, Spinner, Button, Card, Badge, Accordion } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
