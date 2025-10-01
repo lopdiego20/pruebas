@@ -40,7 +40,7 @@ export default function User_Contract() {
 
   // Datos del formulario iniciales
   const [form, setForm] = useState({
-    name: "",
+    firsName: "",
     lastname: "",
     idcard: "",
     telephone: "",
@@ -48,22 +48,29 @@ export default function User_Contract() {
     password: "",
     role: "contratista",
     post: "",
-    state: "Activo",
+    state: true,
     contractId: "",
+    residentialAddress: "",
+    institutionalEmail: "",
+    EconomicaActivityNumber: "",
   });
 
   // Obtener todos los usuario del api
   const obtenerUsuarios = async () => {
     try {
-      const res = await api.get(`/Users`);
-      setUsuariosC(res.data.data);
+      // Usar el endpoint específico para contratistas
+      const res = await api.get(`/Users/Contractor?state=true`);
+      if (res.data.success) {
+        setUsuariosC(res.data.data);
+      } else {
+        setError("No se pudieron cargar los usuarios");
+      }
     } catch (err) {
-       toast.error("Error al cargar los usuario", {
-              description:
-                err.response?.data?.message || "Error en el  en el servidor",
-            });
-
-
+      console.error('Error al obtener usuarios:', err);
+      setError(err.response?.data?.message || 'Error al cargar usuarios');
+      toast.error("Error al cargar los usuario", {
+        description: err.response?.data?.message || "Error en el servidor",
+      });
     } finally {
       setCargando(false);
     }
@@ -98,7 +105,7 @@ export default function User_Contract() {
       const res = await api.post(`/Users`, form);
       setMostrarModal(false);
       setForm({
-        name: "",
+        firsName: "",
         lastname: "",
         idcard: "",
         telephone: "",
@@ -106,8 +113,11 @@ export default function User_Contract() {
         password: "",
         role: "contratista",
         post: "",
-        state: "Activo",
+        state: true,
         contractId: "",
+        residentialAddress: "",
+        institutionalEmail: "",
+        EconomicaActivityNumber: "",
       });
       obtenerUsuarios();
       toast.success(`Usuario exitosamente creado`, {
@@ -167,7 +177,7 @@ export default function User_Contract() {
   // Abril modal para crear Uusario
   const abrirModalCrearUsuario = () => {
     setForm({
-      name: "",
+      firsName: "",
       lastname: "",
       idcard: "",
       telephone: "",
@@ -175,8 +185,11 @@ export default function User_Contract() {
       password: "",
       role: "contratista",
       post: "",
-      state: "Activo",
+      state: true,
       contractId: "",
+      residentialAddress: "",
+      institutionalEmail: "",
+      EconomicaActivityNumber: "",
     });
     setModoEdicion(false);
     setIdEditando(null);
@@ -186,17 +199,20 @@ export default function User_Contract() {
   // Abril el modal para editarlo
   const abrirModalEditar = (user) => {
     setForm({
-      name: user.name,
-      lastname: user.lastname,
-      idcard: user.idcard,
-      telephone: user.telephone,
-      email: user.email,
+      firsName: user.user?.firsName || "",
+      lastname: user.user?.lastName || "",
+      idcard: user.user?.idcard || "",
+      telephone: user.user?.telephone || "",
+      email: user.user?.email || "",
       password: "",
-      post: user.post,
-      state: user.state,
-      contractId: user.contractId?._id || "",
+      post: user.user?.post || "",
+      state: user.user?.state || true,
+      contractId: user.contract?._id || "",
+      residentialAddress: user.residentialAddress || "",
+      institutionalEmail: user.institutionalEmail || "",
+      EconomicaActivityNumber: user.EconomicaActivityNumber || "",
     });
-    setIdEditando(user._id);
+    setIdEditando(user.user?._id);
     setModoEdicion(true);
     setMostrarModal(true);
   };
@@ -216,11 +232,7 @@ export default function User_Contract() {
                   Listado de Usuarios Contratistas
                 </h3>
                 <span className="badge bg-primary-soft text-primary ms-3">
-                  {
-                    usuariosC.filter((user) => user.role === "contratista")
-                      .length
-                  }{" "}
-                  registros
+                  {usuariosC.length} registros
                 </span>
               </div>
               <Button
@@ -261,37 +273,35 @@ export default function User_Contract() {
                     </tr>
                   </thead>
                   <tbody>
-                    {usuariosC
-                      .filter((user) => user.role === "contratista")
-                      .map((user) => (
-                        <tr key={user._id} className="align-middle">
-                          <td className="ps-4 fw-medium">{user.name}</td>
-                          <td>{user.lastname}</td>
-                          <td>{user.idcard || "-"}</td>
-                          <td>{user.telephone || "-"}</td>
+                    {usuariosC.map((contractor) => (
+                        <tr key={contractor._id} className="align-middle">
+                          <td className="ps-4 fw-medium">{contractor.user?.firsName || "-"}</td>
+                          <td>{contractor.user?.lastName || "-"}</td>
+                          <td>{contractor.user?.idcard || "-"}</td>
+                          <td>{contractor.user?.telephone || "-"}</td>
                           <td>
                             <a
-                              href={`mailto:${user.email}`}
+                              href={`mailto:${contractor.user?.email}`}
                               className="text-primary"
                             >
-                              {user.email}
+                              {contractor.user?.email || "-"}
                             </a>
                           </td>
                           <td>
                             <span className="badge bg-secondary bg-opacity-10 text-secondary">
-                              {user.role}
+                              {contractor.user?.role || "contratista"}
                             </span>
                           </td>
-                          <td>{user.post || "-"}</td>
+                          <td>{contractor.user?.post || "-"}</td>
                           <td>
                             <span
                               className={`badge ${
-                                user.state === "Activo"
+                                contractor.user?.state === true
                                   ? "bg-success bg-opacity-10 text-success"
                                   : "bg-danger bg-opacity-10 text-danger"
                               }`}
                             >
-                              {user.state}
+                              {contractor.user?.state ? 'Activo' : 'Inactivo'}
                             </span>
                           </td>
                           <td className="pe-4">
@@ -299,7 +309,7 @@ export default function User_Contract() {
                               <Button
                                 variant="outline-primary"
                                 size="sm"
-                                onClick={() => abrirModalEditar(user)}
+                                onClick={() => abrirModalEditar(contractor)}
                                 className="d-flex align-items-center"
                               >
                                 <i className="bi bi-pencil-square me-1"></i>
@@ -308,7 +318,7 @@ export default function User_Contract() {
                               <Button
                                 variant="outline-danger"
                                 size="sm"
-                                onClick={() => eliminarUsuario(user._id)}
+                                onClick={() => eliminarUsuario(contractor.user?._id)}
                                 className="d-flex align-items-center"
                               >
                                 <i className="bi bi-trash me-1"></i>
@@ -342,11 +352,11 @@ export default function User_Contract() {
           <Form>
             <Row className="g-3">
               <Col md={6}>
-                <Form.Group controlId="name">
+                <Form.Group controlId="firsName">
                   <Form.Label>Nombre</Form.Label>
                   <Form.Control
-                    name="name"
-                    value={form.name}
+                    name="firsName"
+                    value={form.firsName}
                     onChange={handleChange}
                     required
                     placeholder="Ingrese el nombre"
@@ -431,11 +441,12 @@ export default function User_Contract() {
               </Col>
               <Col md={6}>
                 <Form.Group controlId="contractId">
-                  <Form.Label>Contrato</Form.Label>
+                  <Form.Label>Contrato *</Form.Label>
                   <Form.Select
                     name="contractId"
                     value={form.contractId}
                     onChange={handleChange}
+                    required
                   >
                     <option value="">Seleccione un contrato</option>
                     {contratos.map((contrato) => (
@@ -449,15 +460,55 @@ export default function User_Contract() {
               </Col>
 
               <Col md={6}>
+                <Form.Group controlId="residentialAddress">
+                  <Form.Label>Dirección Residencial *</Form.Label>
+                  <Form.Control
+                    name="residentialAddress"
+                    value={form.residentialAddress}
+                    onChange={handleChange}
+                    required={!modoEdicion}
+                    placeholder="Ingrese la dirección residencial"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="institutionalEmail">
+                  <Form.Label>Email Institucional *</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="institutionalEmail"
+                    value={form.institutionalEmail}
+                    onChange={handleChange}
+                    required={!modoEdicion}
+                    placeholder="Ingrese el email institucional"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="EconomicaActivityNumber">
+                  <Form.Label>Número de Actividad Económica *</Form.Label>
+                  <Form.Control
+                    name="EconomicaActivityNumber"
+                    value={form.EconomicaActivityNumber}
+                    onChange={handleChange}
+                    required={!modoEdicion}
+                    placeholder="Ingrese el número de actividad económica"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
                 <Form.Group controlId="state">
                   <Form.Label>Estado</Form.Label>
                   <Form.Select
                     name="state"
                     value={form.state}
-                    onChange={handleChange}
+                    onChange={(e) => setForm({...form, state: e.target.value === 'true'})}
                   >
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
+                    <option value={true}>Activo</option>
+                    <option value={false}>Inactivo</option>
                   </Form.Select>
                 </Form.Group>
               </Col>

@@ -26,7 +26,7 @@ export default function TablaUsuarios() {
   const [idEditando, setIdEditando] = useState(null);
 
   const [form, setForm] = useState({
-    name: "",
+    firsName: "",
     lastname: "",
     idcard: "",
     telephone: "",
@@ -34,19 +34,21 @@ export default function TablaUsuarios() {
     password: "",
     role: "admin",
     post: "Administrador",
-    state: "Activo",
+    state: true,
   });
   // Obtener usuarios
   const obtenerUsuarios = async () => {
-    // const loadingUser = toast.loading("Cargando usuarios");
     try {
-      const res = await api.get("/users");
-      setUsuarios(res.data.data);
-      // toast.success("Usuario cargado exitosamente", {
-      //   id: loadingUser,
-      //   description: res?.data?.message || 'Usuario admin cargados exitosamente',
-      // });
+      // Cambiar a la ruta específica para obtener solo administradores
+      const res = await api.get("/Users/Admin?state=true");
+      if (res.data.success) {
+        setUsuarios(res.data.data);
+      } else {
+        setError("No se pudieron cargar los usuarios");
+      }
     } catch (err) {
+      console.error('Error al obtener usuarios:', err);
+      setError(err.response?.data?.message || 'Error al cargar usuarios');
       toast.error("Error al cargar los usuarios", {
         description: err.response?.data?.message || 'Error en el servidor',
       });
@@ -67,10 +69,10 @@ export default function TablaUsuarios() {
   // Crear usuarios
   const crearUsuario = async () => {
     try {
-      const res = await api.post("/users", form);
+      const res = await api.post("/Users", form);
       setMostrarModal(false);
       setForm({
-        name: "",
+        firsName: "",
         lastname: "",
         idcard: "",
         telephone: "",
@@ -78,7 +80,7 @@ export default function TablaUsuarios() {
         password: "",
         role: "admin",
         post: "Administrador",
-        state: "Activo",
+        state: true,
       });
       obtenerUsuarios();
       toast.success(`Usuario exitosamente creado`, {
@@ -87,7 +89,7 @@ export default function TablaUsuarios() {
     } catch (err) {
       const mensajeServidor =
         err.response?.data?.message || "Error desconocido";
-      toast.success(`Error al crear un usuario`, {
+      toast.error(`Error al crear un usuario`, {
         description: mensajeServidor,
       });
     }
@@ -95,7 +97,7 @@ export default function TablaUsuarios() {
   // Abril modal para crear Uusario
   const abrirModalCrearUsuario = () => {
     setForm({
-      name: "",
+      firsName: "",
       lastname: "",
       idcard: "",
       telephone: "",
@@ -103,7 +105,7 @@ export default function TablaUsuarios() {
       password: "",
       role: "admin",
       post: "Administrador",
-      state: "Activo",
+      state: true,
     });
     setModoEdicion(false);
     setIdEditando(null);
@@ -113,8 +115,8 @@ export default function TablaUsuarios() {
   // Abril modal para la edicion de usuario
   const abrirModalEditar = (user) => {
     setForm({
-      name: user.name,
-      lastname: user.lastname,
+      firsName: user.firsName,
+      lastname: user.lastName,
       idcard: user.idcard,
       telephone: user.telephone,
       email: user.email,
@@ -122,7 +124,6 @@ export default function TablaUsuarios() {
       role: user.role,
       post: user.post,
       state: user.state,
-      contractId: user.contractId || "",
     });
     setIdEditando(user._id);
     setModoEdicion(true);
@@ -140,7 +141,7 @@ export default function TablaUsuarios() {
         delete datosActualizados.password;
       }
       const res = await api.put(
-        `/users/${idEditando}`,
+        `/Users/${idEditando}`,
         datosActualizados
       );
       setMostrarModal(false);
@@ -170,7 +171,7 @@ export default function TablaUsuarios() {
     if (!confirmar) return;
 
     try {
-      const res = await api.delete(`/users/${id}`);
+      const res = await api.delete(`/Users/${id}`);
       obtenerUsuarios(); // recarga la tabla
       toast.success(
         "Usuario eliminado exitosamente",
@@ -198,8 +199,7 @@ export default function TablaUsuarios() {
                   Listado de Administradores
                 </h3>
                 <span className="badge bg-primary-soft text-primary ms-3">
-                  {usuarios.filter((user) => user.role === "admin").length}{" "}
-                  registros
+                  {usuarios.filter((user) => user.role === "admin").length} registros
                 </span>
               </div>
               <Button
@@ -244,8 +244,8 @@ export default function TablaUsuarios() {
                       .filter((user) => user.role === "admin")
                       .map((user) => (
                         <tr key={user._id} className="align-middle">
-                          <td className="ps-4 fw-medium">{user.name}</td>
-                          <td>{user.lastname}</td>
+                          <td className="ps-4 fw-medium">{user.firsName}</td>
+                          <td>{user.lastName}</td>
                           <td>{user.idcard || "-"}</td>
                           <td>{user.telephone || "-"}</td>
                           <td>
@@ -265,12 +265,12 @@ export default function TablaUsuarios() {
                           <td>
                             <span
                               className={`badge ${
-                                user.state === "Activo"
+                                user.state === true
                                   ? "bg-success bg-opacity-10 text-success"
                                   : "bg-danger bg-opacity-10 text-danger"
                               }`}
                             >
-                              {user.state}
+                              {user.state ? 'Activo' : 'Inactivo'}
                             </span>
                           </td>
                           <td className="pe-4">
@@ -323,11 +323,11 @@ export default function TablaUsuarios() {
           <Form>
             <Row className="g-3">
               <Col md={6}>
-                <Form.Group controlId="name">
+                <Form.Group controlId="firsName">
                   <Form.Label>Nombre</Form.Label>
                   <Form.Control
-                    name="name"
-                    value={form.name}
+                    name="firsName"
+                    value={form.firsName}
                     onChange={handleChange}
                     required
                     placeholder="Ingrese el nombre"
@@ -417,10 +417,10 @@ export default function TablaUsuarios() {
                   <Form.Select
                     name="state"
                     value={form.state}
-                    onChange={handleChange}
+                    onChange={(e) => setForm({...form, state: e.target.value === 'true'})}
                   >
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
+                    <option value={true}>Activo</option>
+                    <option value={false}>Inactivo</option>
                   </Form.Select>
                 </Form.Group>
               </Col>

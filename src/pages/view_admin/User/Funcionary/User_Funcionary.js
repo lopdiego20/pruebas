@@ -36,7 +36,7 @@ export default function User_Funcionary() {
 
   // Datos del formulario iniciales
   const [form, setForm] = useState({
-    name: "",
+    firsName: "",
     lastname: "",
     idcard: "",
     telephone: "",
@@ -44,21 +44,24 @@ export default function User_Funcionary() {
     password: "",
     role: "funcionario",
     post: "",
-    state: "Activo",
+    state: true,
   });
 
   // Obtener todos los usuario del api
   const obtenerUsuarios = async () => {
-    // const loading=  toast.loading('Cargando usuario')
     try {
-      const res = await api.get(`/Users`);
-      setUsuariosF(res.data.data);
-      // toast.success('Usuario cargado exitosamente',{id:loading, description:'Usuarios funcionarios cargado exitosamente'})
+      // Usar el endpoint específico para funcionarios
+      const res = await api.get(`/Users/Funcionary?state=true`);
+      if (res.data.success) {
+        setUsuariosF(res.data.data);
+      } else {
+        setError("No se pudieron cargar los usuarios");
+      }
     } catch (err) {
-      // toast.error('Error al cargar los usuarios',{id:loading,description:'Error al cargar funcionarios'})
-      toast.error("Erros al cargar los usuario", {
-        description:
-          err.response?.data?.message || "Error en el  en el servidor",
+      console.error('Error al obtener usuarios:', err);
+      setError(err.response?.data?.message || 'Error al cargar usuarios');
+      toast.error("Error al cargar los usuario", {
+        description: err.response?.data?.message || "Error en el servidor",
       });
     } finally {
       setCargando(false);
@@ -82,16 +85,15 @@ export default function User_Funcionary() {
       const res = await api.post(`/Users`, form);
       setMostrarModal(false);
       setForm({
-        name: "",
+        firsName: "",
         lastname: "",
         idcard: "",
         telephone: "",
         email: "",
         password: "",
-        role: "contratista",
+        role: "funcionario",
         post: "",
-        state: "Activo",
-        contractId: "",
+        state: true,
       });
       obtenerUsuarios();
       toast.success("Usuario creado exitosamente", {
@@ -102,7 +104,7 @@ export default function User_Funcionary() {
     } catch (err) {
       toast.error("Error al crear usuario", {
         id: loadingUser,
-        description: err.response?.data?.message || "Erro en el servidor",
+        description: err.response?.data?.message || "Error en el servidor",
       });
     }
   };
@@ -167,18 +169,18 @@ export default function User_Funcionary() {
   };
 
   // Abril el modal para editarlo
-  const abrirModalEditar = (user) => {
+  const abrirModalEditar = (funcionario) => {
     setForm({
-      name: user.name,
-      lastname: user.lastname,
-      idcard: user.idcard,
-      telephone: user.telephone,
-      email: user.email,
+      firsName: funcionario.user?.firsName || "",
+      lastname: funcionario.user?.lastName || "",
+      idcard: funcionario.user?.idcard || "",
+      telephone: funcionario.user?.telephone || "",
+      email: funcionario.user?.email || "",
       password: "",
-      post: user.post,
-      state: user.state,
+      post: funcionario.user?.post || "",
+      state: funcionario.user?.state || true,
     });
-    setIdEditando(user._id);
+    setIdEditando(funcionario.user?._id);
     setModoEdicion(true);
     setMostrarModal(true);
   };
@@ -186,7 +188,7 @@ export default function User_Funcionary() {
   // Abril e modal para crear
   const abrirModalCrearUsuario = () => {
     setForm({
-      name: "",
+      firsName: "",
       lastname: "",
       idcard: "",
       telephone: "",
@@ -194,7 +196,7 @@ export default function User_Funcionary() {
       password: "",
       role: "funcionario",
       post: "Funcionario",
-      state: "Activo",
+      state: true,
     });
     setModoEdicion(false);
     setIdEditando(null);
@@ -217,11 +219,7 @@ export default function User_Funcionary() {
                   Listado de Usuarios Funcionarios
                 </h3>
                 <span className="badge bg-primary-soft text-primary ms-3">
-                  {
-                    usuariosf.filter((user) => user.role === "funcionario")
-                      .length
-                  }{" "}
-                  registros
+                  {usuariosf.length} registros
                 </span>
               </div>
               <Button
@@ -262,37 +260,35 @@ export default function User_Funcionary() {
                     </tr>
                   </thead>
                   <tbody>
-                    {usuariosf
-                      .filter((user) => user.role === "funcionario")
-                      .map((user) => (
-                        <tr key={user._id} className="align-middle">
-                          <td className="ps-4 fw-medium">{user.name}</td>
-                          <td>{user.lastname}</td>
-                          <td>{user.idcard || "-"}</td>
-                          <td>{user.telephone || "-"}</td>
+                    {usuariosf.map((funcionario) => (
+                        <tr key={funcionario._id} className="align-middle">
+                          <td className="ps-4 fw-medium">{funcionario.user?.firsName || "-"}</td>
+                          <td>{funcionario.user?.lastName || "-"}</td>
+                          <td>{funcionario.user?.idcard || "-"}</td>
+                          <td>{funcionario.user?.telephone || "-"}</td>
                           <td>
                             <a
-                              href={`mailto:${user.email}`}
+                              href={`mailto:${funcionario.user?.email}`}
                               className="text-primary"
                             >
-                              {user.email}
+                              {funcionario.user?.email || "-"}
                             </a>
                           </td>
                           <td>
                             <span className="badge bg-secondary bg-opacity-10 text-secondary">
-                              {user.role}
+                              {funcionario.user?.role || "funcionario"}
                             </span>
                           </td>
-                          <td>{user.post || "-"}</td>
+                          <td>{funcionario.user?.post || "-"}</td>
                           <td>
                             <span
                               className={`badge ${
-                                user.state === "Activo"
+                                funcionario.user?.state === true
                                   ? "bg-success bg-opacity-10 text-success"
                                   : "bg-danger bg-opacity-10 text-danger"
                               }`}
                             >
-                              {user.state}
+                              {funcionario.user?.state ? 'Activo' : 'Inactivo'}
                             </span>
                           </td>
                           <td className="pe-4">
@@ -300,7 +296,7 @@ export default function User_Funcionary() {
                               <Button
                                 variant="outline-primary"
                                 size="sm"
-                                onClick={() => abrirModalEditar(user)}
+                                onClick={() => abrirModalEditar(funcionario)}
                                 className="d-flex align-items-center"
                               >
                                 <i className="bi bi-pencil-square me-1"></i>
@@ -309,7 +305,7 @@ export default function User_Funcionary() {
                               <Button
                                 variant="outline-danger"
                                 size="sm"
-                                onClick={() => eliminarUsuario(user._id)}
+                                onClick={() => eliminarUsuario(funcionario.user?._id)}
                                 className="d-flex align-items-center"
                               >
                                 <i className="bi bi-trash me-1"></i>
@@ -343,11 +339,11 @@ export default function User_Funcionary() {
           <Form>
             <Row className="g-3">
               <Col md={6}>
-                <Form.Group controlId="name">
+                <Form.Group controlId="firsName">
                   <Form.Label>Nombre</Form.Label>
                   <Form.Control
-                    name="name"
-                    value={form.name}
+                    name="firsName"
+                    value={form.firsName}
                     onChange={handleChange}
                     required
                     placeholder="Ingrese el nombre"
@@ -437,10 +433,10 @@ export default function User_Funcionary() {
                   <Form.Select
                     name="state"
                     value={form.state}
-                    onChange={handleChange}
+                    onChange={(e) => setForm({...form, state: e.target.value === 'true'})}
                   >
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
+                    <option value={true}>Activo</option>
+                    <option value={false}>Inactivo</option>
                   </Form.Select>
                 </Form.Group>
               </Col>

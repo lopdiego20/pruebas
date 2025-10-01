@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Card, Badge, Dropdown, ListGroup, Modal, Form, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Badge, Dropdown, ListGroup, Modal, Form, Button, Table, Spinner } from 'react-bootstrap';
 import { 
   PersonFill, 
   FileEarmarkTextFill, 
@@ -19,6 +19,11 @@ const userName = localStorage.getItem("firsName");
 
 export default function AdminDashboard() {
   const [showModal, setShowModal] = useState(false);
+  const [showUsersModal, setShowUsersModal] = useState(false);
+  const [showContractsModal, setShowContractsModal] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [allContracts, setAllContracts] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [formData, setFormData] = useState({
     firsName: '',
     lastname: '',
@@ -132,6 +137,49 @@ export default function AdminDashboard() {
     fetchActiveContracts();
   }, []);
 
+  // Función para obtener todos los usuarios
+  const fetchAllUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/Users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setAllUsers(data.data);
+      }
+    } catch (error) {
+      console.error('Error al obtener todos los usuarios:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Función para obtener todos los contratos
+  const fetchAllContracts = async () => {
+    setLoadingContracts(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/Contracts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'x-access-token': token
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setAllContracts(data.data);
+      }
+    } catch (error) {
+      console.error('Error al obtener todos los contratos:', error);
+    } finally {
+      setLoadingContracts(false);
+    }
+  };
+
   // Función para obtener contratos activos disponibles
   const fetchActiveContracts = async () => {
     setLoadingContracts(true);
@@ -178,6 +226,16 @@ export default function AdminDashboard() {
 
   const handleCreateUser = () => {
     setShowModal(true);
+  };
+
+  const handleShowAllUsers = () => {
+    setShowUsersModal(true);
+    fetchAllUsers();
+  };
+
+  const handleShowAllContracts = () => {
+    setShowContractsModal(true);
+    fetchAllContracts();
   };
 
   const handleCloseModal = () => {
@@ -353,9 +411,12 @@ export default function AdminDashboard() {
             </div>
           </Card.Body>
           <Card.Footer className="bg-transparent border-0 py-3">
-            <a href="#" className="text-primary text-decoration-none small fw-semibold">
+            <button 
+              onClick={handleShowAllUsers}
+              className="btn btn-link text-primary text-decoration-none small fw-semibold p-0"
+            >
               Ver todos los usuarios <ArrowRightShort size={18} />
-            </a>
+            </button>
           </Card.Footer>
         </Card>
       </Col>
@@ -381,9 +442,12 @@ export default function AdminDashboard() {
             </div>
           </Card.Body>
           <Card.Footer className="bg-transparent border-0 py-3">
-            <a href="#" className="text-success text-decoration-none small fw-semibold">
+            <button 
+              onClick={handleShowAllContracts}
+              className="btn btn-link text-success text-decoration-none small fw-semibold p-0"
+            >
               Gestionar contratos <ArrowRightShort size={18} />
-            </a>
+            </button>
           </Card.Footer>
         </Card>
       </Col>
@@ -755,6 +819,213 @@ export default function AdminDashboard() {
         </div>
       </Form>
     </Modal.Body>
+  </Modal>
+
+  {/* Modal para ver todos los usuarios */}
+  <Modal show={showUsersModal} onHide={() => setShowUsersModal(false)} size="xl" centered>
+    <Modal.Header closeButton>
+      <Modal.Title>
+        <PersonFill className="me-2 text-primary" />
+        Todos los Usuarios del Sistema
+      </Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      {loadingUsers ? (
+        <div className="text-center py-4">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-2 text-muted">Cargando usuarios...</p>
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <Table hover className="mb-0">
+            <thead className="bg-light">
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Cargo</th>
+                <th>Estado</th>
+                <th>Cédula</th>
+                <th>Teléfono</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="text-center py-4 text-muted">
+                    No hay usuarios registrados
+                  </td>
+                </tr>
+              ) : (
+                allUsers.map((user) => (
+                  <tr key={user._id}>
+                    <td className="fw-medium">
+                      {user.firsName || user.firstName || ''} {user.lastName || user.lastname || ''}
+                    </td>
+                    <td>{user.email || '-'}</td>
+                    <td>
+                      <Badge 
+                        bg={
+                          user.role === 'admin' ? 'primary' : 
+                          user.role === 'funcionario' ? 'success' : 
+                          user.role === 'contratista' ? 'info' : 'secondary'
+                        }
+                        className="text-capitalize"
+                      >
+                        {user.role || 'Sin rol'}
+                      </Badge>
+                    </td>
+                    <td>{user.post || '-'}</td>
+                    <td>
+                      <Badge bg={user.state === true ? 'success' : 'danger'}>
+                        {user.state === true ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    </td>
+                    <td>{user.idcard || '-'}</td>
+                    <td>{user.telephone || '-'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        </div>
+      )}
+    </Modal.Body>
+    <Modal.Footer className="d-flex justify-content-between">
+      <div className="text-muted">
+        <small>
+          Total: {allUsers.length} usuarios | 
+          Activos: {allUsers.filter(u => u.state === true).length} | 
+          Inactivos: {allUsers.filter(u => u.state === false).length}
+        </small>
+      </div>
+      <Button variant="secondary" onClick={() => setShowUsersModal(false)}>
+        Cerrar
+      </Button>
+    </Modal.Footer>
+  </Modal>
+
+  {/* Modal para ver todos los contratos */}
+  <Modal show={showContractsModal} onHide={() => setShowContractsModal(false)} size="xl" centered>
+    <Modal.Header closeButton>
+      <Modal.Title>
+        <FileEarmarkTextFill className="me-2 text-success" />
+        Gestión de Contratos
+      </Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      {loadingContracts ? (
+        <div className="text-center py-4">
+          <Spinner animation="border" variant="success" />
+          <p className="mt-2 text-muted">Cargando contratos...</p>
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <Table hover className="mb-0">
+            <thead className="bg-light">
+              <tr>
+                <th>N° Contrato</th>
+                <th>Tipo</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Valor Total</th>
+                <th>Estado</th>
+                <th>Contratista</th>
+                <th>Objetivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allContracts.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="text-center py-4 text-muted">
+                    No hay contratos registrados
+                  </td>
+                </tr>
+              ) : (
+                allContracts.map((contract) => {
+                  const isExpired = new Date(contract.endDate) < new Date();
+                  const hasContractor = contract.contractor;
+                  
+                  return (
+                    <tr key={contract._id}>
+                      <td className="fw-medium">{contract.contractNumber}</td>
+                      <td>
+                        <small className="text-muted">{contract.typeofcontract}</small>
+                      </td>
+                      <td>
+                        <small>{new Date(contract.startDate).toLocaleDateString()}</small>
+                      </td>
+                      <td>
+                        <small className={isExpired ? 'text-danger' : ''}>
+                          {new Date(contract.endDate).toLocaleDateString()}
+                          {isExpired && <span className="ms-1">⚠️</span>}
+                        </small>
+                      </td>
+                      <td>
+                        <small className="fw-medium">
+                          ${contract.totalValue?.toLocaleString() || '0'}
+                        </small>
+                      </td>
+                      <td>
+                        <div className="d-flex flex-column gap-1">
+                          <Badge bg={contract.state === true ? 'success' : 'danger'} className="small">
+                            {contract.state === true ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                          {isExpired && (
+                            <Badge bg="warning" className="small">
+                              Expirado
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        {hasContractor ? (
+                          <div>
+                            <Badge bg="info" className="small mb-1">
+                              Asignado
+                            </Badge>
+                            <br />
+                            <small className="text-muted">
+                              {contract.contractor?.user?.firsName || contract.contractor?.user?.firstName || ''} {contract.contractor?.user?.lastName || ''}
+                            </small>
+                          </div>
+                        ) : (
+                          <Badge bg="secondary" className="small">
+                            Sin asignar
+                          </Badge>
+                        )}
+                      </td>
+                      <td>
+                        <small className="text-muted" title={contract.objectiveContract}>
+                          {contract.objectiveContract?.length > 50 
+                            ? `${contract.objectiveContract.substring(0, 50)}...` 
+                            : contract.objectiveContract || '-'
+                          }
+                        </small>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </Table>
+        </div>
+      )}
+    </Modal.Body>
+    <Modal.Footer className="d-flex justify-content-between">
+      <div className="text-muted">
+        <small>
+          Total: {allContracts.length} contratos | 
+          Activos: {allContracts.filter(c => c.state === true).length} | 
+          Inactivos: {allContracts.filter(c => c.state === false).length} | 
+          Con contratista: {allContracts.filter(c => c.contractor).length} | 
+          Expirados: {allContracts.filter(c => new Date(c.endDate) < new Date()).length}
+        </small>
+      </div>
+      <Button variant="secondary" onClick={() => setShowContractsModal(false)}>
+        Cerrar
+      </Button>
+    </Modal.Footer>
   </Modal>
 
   {/* Estilos adicionales */}

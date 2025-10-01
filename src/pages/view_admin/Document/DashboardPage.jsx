@@ -11,6 +11,9 @@ const DashboardDocumentos = () => {
   const [documentos, setDocumentos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedDocumentType, setSelectedDocumentType] = useState('');
   const [modoEdicion, setModoEdicion] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [formData, setFormData] = useState({
@@ -115,31 +118,65 @@ const DashboardDocumentos = () => {
     }
   };
 
-    const eliminarDocumento = async (documento) => {
-    if (!window.confirm('¿Estás seguro de eliminar esta gestión documental?')) return;
+  const eliminarDocumento = async (documento) => {
+    console.log('=== DEBUG ELIMINAR COMPLETO ===');
+    console.log('documento completo:', documento);
+    console.log('documento.userContract:', documento.userContract);
+    console.log('typeof documento.userContract:', typeof documento.userContract);
+    
+    if (!window.confirm('¿Estás seguro de eliminar toda esta gestión documental? Esta acción eliminará todos los documentos asociados.')) return;
 
     try {
-      // Buscar el contractor asociado al documento
-      const contractor = usuarios.find((c) => c._id === documento.userContract);
+      const loadingToast = toast.loading('Eliminando gestión documental completa...');
 
-      if (!contractor) {
-        toast.error('No se encontró el contractor asociado al documento');
-        return;
+      // Asegurar que obtenemos el ID correcto
+      let contractId;
+      if (typeof documento.userContract === 'object' && documento.userContract !== null) {
+        contractId = documento.userContract._id || documento.userContract.id || documento.userContract;
+      } else {
+        contractId = documento.userContract;
       }
-
-      const loadingToast = toast.loading('Eliminando documento...');
-
-      await api.delete(`/Documents/${contractor._id}`);
       
-      toast.success('Documento eliminado exitosamente', {
+      console.log('contractId final a enviar:', contractId);
+      console.log('URL final:', `/Documents/${contractId}`);
+
+      await api.delete(`/Documents/${contractId}`);
+      
+      toast.success('Gestión documental eliminada exitosamente', {
         id: loadingToast
       });
       
       // Recargar la lista de documentos
       fetchDocumentos();
     } catch (error) {
-      console.error('Error al eliminar documento:', error);
-      toast.error('Error al eliminar documento', {
+      console.error('Error al eliminar gestión documental:', error);
+      toast.error('Error al eliminar gestión documental', {
+        description: error.response?.data?.message || 'Error en el servidor'
+      });
+    }
+  };
+
+  // Nueva función para eliminar documento específico
+  const eliminarDocumentoEspecifico = async (userContract, tipoDocumento) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el documento "${tipoDocumento}"?`)) return;
+
+    try {
+      const loadingToast = toast.loading(`Eliminando ${tipoDocumento}...`);
+
+      // Asegurar que userContract es un string (ID)
+      const contractId = typeof userContract === 'object' ? userContract._id || userContract.id : userContract;
+
+      await api.delete(`/Documents/${contractId}/document/${tipoDocumento}`);
+      
+      toast.success('Documento específico eliminado exitosamente', {
+        id: loadingToast
+      });
+      
+      // Recargar la lista de documentos
+      fetchDocumentos();
+    } catch (error) {
+      console.error('Error al eliminar documento específico:', error);
+      toast.error('Error al eliminar documento específico', {
         description: error.response?.data?.message || 'Error en el servidor'
       });
     }
@@ -166,6 +203,12 @@ const DashboardDocumentos = () => {
     });
     setFiles({});
     setShowModal(true);
+  };
+
+  const abrirModalEliminarEspecifico = (documento) => {
+    setSelectedDocument(documento);
+    setSelectedDocumentType('');
+    setShowDeleteModal(true);
   };
 
   const abrirModalEditar = (doc) => {
@@ -376,12 +419,12 @@ const DashboardDocumentos = () => {
                 <Table hover className="mb-0">
                   <thead className="bg-light">
                     <tr>
-                      <th>Usuario</th>
-                      <th>Descripción</th>
-                      <th>Estado</th>
-                      <th>Retención</th>
-                      <th>Versión</th>
-                      <th>Acciones</th>
+                      <th style={{ width: '25%' }}>Contratista</th>
+                      <th style={{ width: '25%' }}>Descripción</th>
+                      <th style={{ width: '12%' }}>Estado</th>
+                      <th style={{ width: '10%' }}>Retención</th>
+                      <th style={{ width: '8%' }}>Versión</th>
+                      <th style={{ width: '20%' }}>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -395,7 +438,12 @@ const DashboardDocumentos = () => {
                             <td>
                               <div className="d-flex align-items-center">
                                 <i className="bi bi-person-circle me-2 text-primary"></i>
-                                {user ? `${user.firsName || user.firstName || ''} ${user.lastName || ''}`.trim() : 'Sin nombre'}
+                                <div>
+                                  <div className="fw-medium">
+                                    {user ? `${user.firstName || user.firsName || ''} ${user.lastName || ''}`.trim() || 'Sin nombre' : 'Sin nombre'}
+                                  </div>
+                                  <small className="text-muted">{user?.email || 'Sin email'}</small>
+                                </div>
                               </div>
                             </td>
                             <td>{doc.description}</td>
@@ -409,20 +457,32 @@ const DashboardDocumentos = () => {
                               <Badge bg="info">v{doc.version}</Badge>
                             </td>
                             <td>
-                              <div className="d-flex gap-2">
+                              <div className="d-flex gap-1 flex-wrap">
                                 <Button
                                   variant="outline-primary"
                                   size="sm"
                                   onClick={() => abrirModalEditar(doc)}
                                 >
-                                  <i className="bi bi-pencil-square me-1"></i>Editar
+                                  <i className="bi bi-pencil-square"></i>
+                                  <span className="d-none d-md-inline ms-1">Editar</span>
+                                </Button>
+                                <Button
+                                  variant="outline-warning"
+                                  size="sm"
+                                  onClick={() => abrirModalEliminarEspecifico(doc)}
+                                  title="Eliminar documento específico"
+                                >
+                                  <i className="bi bi-file-minus"></i>
+                                  <span className="d-none d-lg-inline ms-1">Doc</span>
                                 </Button>
                                 <Button
                                   variant="outline-danger"
                                   size="sm"
                                   onClick={() => eliminarDocumento(doc)}
+                                  title="Eliminar gestión completa"
                                 >
-                                  <i className="bi bi-trash me-1"></i>Eliminar
+                                  <i className="bi bi-trash"></i>
+                                  <span className="d-none d-lg-inline ms-1">Todo</span>
                                 </Button>
                               </div>
                             </td>
@@ -459,7 +519,7 @@ const DashboardDocumentos = () => {
                 <option value="">Seleccione un usuario contratista</option>
                 {usuarios.map((contractor) => (
                   <option key={contractor._id} value={contractor._id}>
-                    {contractor.user?.firsName || contractor.user?.firstName || ''} {contractor.user?.lastName || ''} - {contractor.user?.email}
+                    {contractor.user?.firstName || contractor.user?.firsName || ''} {contractor.user?.lastName || ''} - {contractor.user?.email}
                   </option>
                 ))}
               </Form.Select>
@@ -562,6 +622,88 @@ const DashboardDocumentos = () => {
               </Button>
             </div>
           </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal para eliminar documento específico */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton className="border-0 bg-light">
+          <Modal.Title>
+            <i className="bi bi-file-minus text-warning me-2"></i>
+            Eliminar Documento Específico
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="alert alert-warning">
+            <i className="bi bi-exclamation-triangle me-2"></i>
+            <strong>Atención:</strong> Esta acción eliminará únicamente el documento seleccionado, no toda la gestión documental.
+          </div>
+          
+          {selectedDocument && (
+            <Card className="mb-3 bg-light border-0">
+              <Card.Body className="py-2">
+                <div className="row">
+                  <div className="col-12">
+                    <small className="text-muted">Gestión Documental:</small>
+                    <p className="mb-1 fw-semibold">{selectedDocument.description}</p>
+                  </div>
+                  <div className="col-12">
+                    <small className="text-muted">Contratista:</small>
+                    <p className="mb-0 fw-semibold">{
+                      (() => {
+                        const contractor = usuarios.find((c) => c._id === selectedDocument.userContract);
+                        const user = contractor?.user;
+                        return user ? `${user.firstName || user.firsName || ''} ${user.lastName || ''}`.trim() || 'Sin nombre' : 'Sin nombre';
+                      })()
+                    }</p>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          )}
+
+          <Form.Group className="mb-3">
+            <Form.Label className="fw-semibold">Seleccionar documento a eliminar *</Form.Label>
+            <Form.Select 
+              value={selectedDocumentType} 
+              onChange={(e) => setSelectedDocumentType(e.target.value)}
+              required
+            >
+              <option value="">Seleccione un documento...</option>
+              <option value="filingLetter">Carta de Radicación</option>
+              <option value="certificateOfCompliance">Certificado de Cumplimiento</option>
+              <option value="signedCertificateOfCompliance">Certificado de Cumplimiento Firmado</option>
+              <option value="activityReport">Reporte de Actividad</option>
+              <option value="taxQualityCertificate">Certificado de Calidad Tributaria</option>
+              <option value="socialSecurity">Seguridad Social</option>
+              <option value="rut">RUT</option>
+              <option value="rit">RIT</option>
+              <option value="trainings">Capacitaciones</option>
+              <option value="initiationRecord">Acta de Inicio</option>
+              <option value="accountCertification">Certificación Bancaria</option>
+            </Form.Select>
+          </Form.Group>
+
+          <div className="d-flex justify-content-end gap-2">
+            <Button variant="light" onClick={() => setShowDeleteModal(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="warning" 
+              onClick={() => {
+                if (selectedDocumentType) {
+                  eliminarDocumentoEspecifico(selectedDocument.userContract, selectedDocumentType);
+                  setShowDeleteModal(false);
+                } else {
+                  toast.error('Por favor selecciona un documento');
+                }
+              }}
+              disabled={!selectedDocumentType}
+            >
+              <i className="bi bi-file-minus me-2"></i>
+              Eliminar Documento
+            </Button>
+          </div>
         </Modal.Body>
       </Modal>
     </div>
