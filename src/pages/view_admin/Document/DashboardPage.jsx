@@ -6,8 +6,10 @@ import { toast } from 'sonner';
 import Header from '../../../components/Header/Header';
 import api from '../../../services/api';
 import '../../../App.css'; // Para la animación spin
+import { usePermissions } from '../../../hooks/usePermissions';
 
 const DashboardDocumentos = () => {
+  const permissions = usePermissions();
   const [documentos, setDocumentos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -458,32 +460,38 @@ const DashboardDocumentos = () => {
                             </td>
                             <td>
                               <div className="d-flex gap-1 flex-wrap">
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => abrirModalEditar(doc)}
-                                >
-                                  <i className="bi bi-pencil-square"></i>
-                                  <span className="d-none d-md-inline ms-1">Editar</span>
-                                </Button>
-                                <Button
-                                  variant="outline-warning"
-                                  size="sm"
-                                  onClick={() => abrirModalEliminarEspecifico(doc)}
-                                  title="Eliminar documento específico"
-                                >
-                                  <i className="bi bi-file-minus"></i>
-                                  <span className="d-none d-lg-inline ms-1">Doc</span>
-                                </Button>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() => eliminarDocumento(doc)}
-                                  title="Eliminar gestión completa"
-                                >
-                                  <i className="bi bi-trash"></i>
-                                  <span className="d-none d-lg-inline ms-1">Todo</span>
-                                </Button>
+                                {permissions.canEdit.documents && (
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => abrirModalEditar(doc)}
+                                  >
+                                    <i className="bi bi-pencil-square"></i>
+                                    <span className="d-none d-md-inline ms-1">Editar</span>
+                                  </Button>
+                                )}
+                                {permissions.canDelete.documents && (
+                                  <Button
+                                    variant="outline-warning"
+                                    size="sm"
+                                    onClick={() => abrirModalEliminarEspecifico(doc)}
+                                    title="Eliminar documento específico"
+                                  >
+                                    <i className="bi bi-file-minus"></i>
+                                    <span className="d-none d-lg-inline ms-1">Doc</span>
+                                  </Button>
+                                )}
+                                {permissions.canDelete.documents && (
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    onClick={() => eliminarDocumento(doc)}
+                                    title="Eliminar gestión completa"
+                                  >
+                                    <i className="bi bi-trash"></i>
+                                    <span className="d-none d-lg-inline ms-1">Todo</span>
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>

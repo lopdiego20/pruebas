@@ -5,8 +5,10 @@ import { Button, Table, Modal, Form, Card, Badge, Spinner, Accordion } from 'rea
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Header from '../../../components/Header/Header';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 const DashboardDocumentos = () => {
+  const permissions = usePermissions();
   const [documentos, setDocumentos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -258,20 +260,24 @@ const DashboardDocumentos = () => {
                             </td>
                             <td>
                               <div className="d-flex gap-2">
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => abrirModalEditar(doc)}
-                                >
-                                  <i className="bi bi-pencil-square me-1"></i>Editar
-                                </Button>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() => eliminarDocumento(doc)}
-                                >
-                                  <i className="bi bi-trash me-1"></i>Eliminar
-                                </Button>
+                                {permissions.canEdit.documents && (
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => abrirModalEditar(doc)}
+                                  >
+                                    <i className="bi bi-pencil-square me-1"></i>Editar
+                                  </Button>
+                                )}
+                                {permissions.canDelete.documents && (
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    onClick={() => eliminarDocumento(doc)}
+                                  >
+                                    <i className="bi bi-trash me-1"></i>Eliminar
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>

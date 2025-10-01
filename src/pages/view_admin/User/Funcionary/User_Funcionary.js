@@ -16,8 +16,10 @@ import "./User_Funcionary.css";
 import { toast } from "sonner";
 // Api
 import api from '../../../../services/api'
+import { usePermissions } from "../../../../hooks/usePermissions";
 
 export default function User_Funcionary() {
+  const permissions = usePermissions();
   // Varibale para traer todos los usuario contratista de la api
   const [usuariosf, setUsuariosF] = useState([]);
 
@@ -293,24 +295,28 @@ export default function User_Funcionary() {
                           </td>
                           <td className="pe-4">
                             <div className="d-flex justify-content-end gap-2">
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                onClick={() => abrirModalEditar(funcionario)}
-                                className="d-flex align-items-center"
-                              >
-                                <i className="bi bi-pencil-square me-1"></i>
-                                Editar
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => eliminarUsuario(funcionario.user?._id)}
-                                className="d-flex align-items-center"
-                              >
-                                <i className="bi bi-trash me-1"></i>
-                                Eliminar
-                              </Button>
+                              {permissions.canEdit.users && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => abrirModalEditar(funcionario)}
+                                  className="d-flex align-items-center"
+                                >
+                                  <i className="bi bi-pencil-square me-1"></i>
+                                  Editar
+                                </Button>
+                              )}
+                              {permissions.canDelete.users && (
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => eliminarUsuario(funcionario.user?._id)}
+                                  className="d-flex align-items-center"
+                                >
+                                  <i className="bi bi-trash me-1"></i>
+                                  Eliminar
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>

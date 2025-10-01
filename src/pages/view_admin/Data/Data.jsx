@@ -7,8 +7,10 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import Header from '../../../components/Header/Header';
 import api from '../../../services/api';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 const DashboardData = () => {
+  const permissions = usePermissions();
   const [dataList, setDataList] = useState([]);
   const [documentos, setDocumentos] = useState([]);
   const [showModal, setShowModal] = useState(false);

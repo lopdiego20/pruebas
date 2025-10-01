@@ -16,8 +16,11 @@ import "./Contracts.css";
 import api from "../../../services/api";
 import Header from "../../../components/Header/Header";
 import { toast } from "sonner";
+import { usePermissions } from "../../../hooks/usePermissions";
+
 export default function Contracts() {
   const [contracts, setContracts] = useState([]);
+  const permissions = usePermissions();
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -232,24 +235,28 @@ export default function Contracts() {
                         </td>
                         <td className="pe-4">
                           <div className="d-flex justify-content-end gap-2">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => abrirModalEditar(contract)}
-                              className="d-flex align-items-center"
-                            >
-                              <i className="bi bi-pencil-square me-1"></i>
-                              Editar
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => eliminarContrato(contract._id)}
-                              className="d-flex align-items-center"
-                            >
-                              <i className="bi bi-trash me-1"></i>
-                              Eliminar
-                            </Button>
+                            {permissions.canEdit.contracts && (
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                onClick={() => abrirModalEditar(contract)}
+                                className="d-flex align-items-center"
+                              >
+                                <i className="bi bi-pencil-square me-1"></i>
+                                Editar
+                              </Button>
+                            )}
+                            {permissions.canDelete.contracts && (
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => eliminarContrato(contract._id)}
+                                className="d-flex align-items-center"
+                              >
+                                <i className="bi bi-trash me-1"></i>
+                                Eliminar
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

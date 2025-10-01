@@ -7,8 +7,10 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import Header from '../../../components/Header/Header';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 const DashboardData = () => {
+  const permissions = usePermissions();
   const [dataList, setDataList] = useState([]);
   const [documentos, setDocumentos] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -265,13 +267,15 @@ const DashboardData = () => {
                                     <i className={`bi bi-${detalleVisible === item._id ? 'chevron-up' : 'chevron-down'} me-1`}></i>
                                     {detalleVisible === item._id ? 'Ocultar' : 'Detalles'}
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline-danger"
-                                    onClick={() => eliminarData(item._id)}
-                                  >
-                                    <i className="bi bi-trash me-1"></i>Eliminar
-                                  </Button>
+                                  {permissions.canDelete.data && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline-danger"
+                                      onClick={() => eliminarData(item._id)}
+                                    >
+                                      <i className="bi bi-trash me-1"></i>Eliminar
+                                    </Button>
+                                  )}
                                 </div>
                               </td>
                             </tr>

@@ -18,8 +18,10 @@ import { toast } from "sonner";
 
 // Api
 import api from "../../../../services/api"
+import { usePermissions } from "../../../../hooks/usePermissions";
 
 export default function User_Contract() {
+  const permissions = usePermissions();
   // Varibale para traer todos los usuario contratista de la api
   const [usuariosC, setUsuariosC] = useState([]);
 
@@ -306,24 +308,28 @@ export default function User_Contract() {
                           </td>
                           <td className="pe-4">
                             <div className="d-flex justify-content-end gap-2">
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                onClick={() => abrirModalEditar(contractor)}
-                                className="d-flex align-items-center"
-                              >
-                                <i className="bi bi-pencil-square me-1"></i>
-                                Editar
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => eliminarUsuario(contractor.user?._id)}
-                                className="d-flex align-items-center"
-                              >
-                                <i className="bi bi-trash me-1"></i>
-                                Eliminar
-                              </Button>
+                              {permissions.canEdit.users && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => abrirModalEditar(contractor)}
+                                  className="d-flex align-items-center"
+                                >
+                                  <i className="bi bi-pencil-square me-1"></i>
+                                  Editar
+                                </Button>
+                              )}
+                              {permissions.canDelete.users && (
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => eliminarUsuario(contractor.user?._id)}
+                                  className="d-flex align-items-center"
+                                >
+                                  <i className="bi bi-trash me-1"></i>
+                                  Eliminar
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>

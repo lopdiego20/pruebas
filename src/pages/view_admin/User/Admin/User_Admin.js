@@ -15,9 +15,12 @@ import Header from "../../../../components/Header/Header";
 import "./TablaUsuarios.css";
 import { toast } from "sonner";
 import api from '../../../../services/api'
+import { usePermissions } from "../../../../hooks/usePermissions";
+
 export default function TablaUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const permissions = usePermissions();
   const [error, setError] = useState("");
   const [mostrarModal, setMostrarModal] = useState(false);
 
@@ -275,24 +278,28 @@ export default function TablaUsuarios() {
                           </td>
                           <td className="pe-4">
                             <div className="d-flex justify-content-end gap-2">
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                onClick={() => abrirModalEditar(user)}
-                                className="d-flex align-items-center"
-                              >
-                                <i className="bi bi-pencil-square me-1"></i>
-                                Editar
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => eliminarUsuario(user._id)}
-                                className="d-flex align-items-center"
-                              >
-                                <i className="bi bi-trash me-1"></i>
-                                Eliminar
-                              </Button>
+                              {permissions.canEdit.users && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => abrirModalEditar(user)}
+                                  className="d-flex align-items-center"
+                                >
+                                  <i className="bi bi-pencil-square me-1"></i>
+                                  Editar
+                                </Button>
+                              )}
+                              {permissions.canDelete.users && (
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => eliminarUsuario(user._id)}
+                                  className="d-flex align-items-center"
+                                >
+                                  <i className="bi bi-trash me-1"></i>
+                                  Eliminar
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
