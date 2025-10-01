@@ -1,10 +1,10 @@
 // src/pages/view_admin/Documentos/GestionDocumental.jsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Table, Spinner, Button, Card, Badge, Accordion } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Header from '../../../components/Header/Header';
+import api from '../../../services/api';
 
 const GestionDocumental = () => {
   const [documentos, setDocumentos] = useState([]);
@@ -17,9 +17,7 @@ const GestionDocumental = () => {
     const fetchDocumentos = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('http://localhost:3000/api/Documents', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get('/Documents');
         setDocumentos(res.data.data);
       } catch (err) {
         console.error('Error al obtener los documentos:', err);
@@ -154,7 +152,7 @@ const GestionDocumental = () => {
                                                   <div>
                                                     <h6 className="mb-1 fw-semibold">{field.label}</h6>
                                                     <a
-                                                      href={`http://localhost:3000/${doc[field.name].replace('\\', '/')}`}
+                                                      href={`${process.env.REACT_APP_API_BASE_URL?.replace('/api', '') || 'http://192.168.10.15:5000'}/${doc[field.name].replace('\\', '/')}`}
                                                       target="_blank"
                                                       rel="noopener noreferrer"
                                                       className="btn btn-sm btn-outline-primary"

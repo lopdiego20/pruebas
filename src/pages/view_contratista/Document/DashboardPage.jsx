@@ -1,11 +1,11 @@
 // src/pages/DashboardDocumentos.jsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Button, Table, Modal, Form, Card, Badge, Spinner, Accordion } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Header from '../../../components/Header/Header';
 import { usePermissions } from '../../../hooks/usePermissions';
+import api from '../../../services/api';
 
 const DashboardDocumentos = () => {
   const permissions = usePermissions();
@@ -44,9 +44,7 @@ const DashboardDocumentos = () => {
 
   const fetchDocumentos = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/Documents', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get('/Documents');
       setDocumentos(res.data.data);
     } catch (error) {
       console.error('Error al obtener documentos:', error);
@@ -56,9 +54,7 @@ const DashboardDocumentos = () => {
 
   const fetchUsuarios = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/Users', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get('/Users');
       setUsuarios(res.data.data);
     } catch (error) {
       console.error('Error al obtener usuarios:', error);
@@ -77,8 +73,7 @@ const DashboardDocumentos = () => {
         return;
       }
 
-      await axios.delete(`http://localhost:3000/api/Documents/${usuarioCreador._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      await api.delete(`/Documents/${usuarioCreador._id}`, {
         data: { _id: documento._id }
       });
 
@@ -159,13 +154,13 @@ const DashboardDocumentos = () => {
       toast.loading(modoEdicion ? 'Actualizando gestión...' : 'Creando gestión...');
       
       if (modoEdicion) {
-        await axios.put(`http://localhost:3000/api/Documents/${user_contract}`, form, {
-          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
+        await api.put(`/Documents/${user_contract}`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
         toast.success('Gestión documental actualizada');
       } else {
-        await axios.post(`http://localhost:3000/api/Documents/${user_contract}`, form, {
-          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
+        await api.post(`/Documents/${user_contract}`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
         toast.success('Gestión documental creada');
       }

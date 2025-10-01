@@ -1,6 +1,5 @@
 // src/pages/DashboardData.jsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Button, Table, Form, Modal, Accordion, Spinner, Card, Badge } from 'react-bootstrap';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -8,6 +7,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import Header from '../../../components/Header/Header';
 import { usePermissions } from '../../../hooks/usePermissions';
+import api from '../../../services/api';
 
 const DashboardData = () => {
   const permissions = usePermissions();
@@ -31,9 +31,7 @@ const DashboardData = () => {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/Data', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get('/Data');
       setDataList(res.data.data);
     } catch (error) {
       console.error('Error al obtener Data:', error);
@@ -43,9 +41,7 @@ const DashboardData = () => {
 
   const fetchDocumentos = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/Documents', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get('/Documents');
       setDocumentos(res.data.data);
     } catch (error) {
       console.error('Error al obtener documentos:', error);
@@ -57,11 +53,7 @@ const DashboardData = () => {
     e.preventDefault();
     try {
       toast.loading('Ejecutando análisis...');
-      await axios.post(
-        'http://localhost:3000/api/Data',
-        { document_management: selectedDocId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/Data', { document_management: selectedDocId });
       toast.success('Comparación ejecutada con éxito');
       fetchData();
       setShowModal(false);
@@ -74,9 +66,7 @@ const DashboardData = () => {
   const eliminarData = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar esta comparación?')) return;
     try {
-      await axios.delete(`http://localhost:3000/api/Data/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/Data/${id}`);
       toast.success('Comparación eliminada');
       fetchData();
     } catch (error) {
