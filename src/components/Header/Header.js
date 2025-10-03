@@ -47,8 +47,7 @@ export default function Header() {
                     )}
                     {userRole === ROLES.CONTRATISTA &&(
                         <>
-                        <Nav.Link href = "/contratista">Panel contratista</Nav.Link>
-                        <Nav.Link href = "/documentos">Documentos</Nav.Link>
+                        {/* Sin opciones de navegación para contratistas */}
                         </>
                     )}
                     <Nav.Link onClick={cerrarSesion} className="logout-link">

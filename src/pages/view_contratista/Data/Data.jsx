@@ -23,20 +23,70 @@ const DashboardData = () => {
     const fetchAll = async () => {
       setLoading(true);
       await fetchDocumentos();
-      await fetchData();
+      await fetchDataForContratista();
       setLoading(false);
     };
     fetchAll();
   }, []);
 
-  const fetchData = async () => {
+  const fetchDataForContratista = async () => {
     try {
-      const res = await api.get('/Data');
-      setDataList(res.data.data);
+      // Obtener información del usuario actual
+      const user = JSON.parse(localStorage.getItem("user"));
+      const userRole = localStorage.getItem('role');
+      const userId = user?._id;
+
+      console.log('Usuario actual para Data:', { userId, userRole });
+
+      if (userRole === 'contratista') {
+        // Para contratistas: obtener información del contratista para encontrar su management ID
+        const contractorRes = await api.get(`/Users/Contractor`);
+        const contractorInfo = contractorRes.data.data.find(contractor => 
+          contractor.user?._id === userId
+        );
+
+        console.log('Información del contratista encontrada:', contractorInfo);
+
+        if (contractorInfo && contractorInfo._id) {
+          // Usar la API específica para contratistas con el management ID
+          console.log('Consultando datos para management ID:', contractorInfo._id);
+          const res = await api.get(`/Data/${contractorInfo._id}`);
+          console.log('Respuesta de la API:', res.data);
+          
+          if (res.data && res.data.data) {
+            setDataList(Array.isArray(res.data.data) ? res.data.data : [res.data.data]);
+            toast.success(`Se cargaron ${Array.isArray(res.data.data) ? res.data.data.length : 1} comparaciones`);
+          } else {
+            setDataList([]);
+            toast.info('No tienes análisis de comparación disponibles');
+          }
+        } else {
+          // Si no tiene management asociado, mostrar array vacío
+          setDataList([]);
+          toast.warning('No se encontró información de gestión asociada a tu cuenta');
+          console.log('No se encontró información de management para el contratista');
+        }
+      } else {
+        // Para admin y funcionarios: obtener todos los datos (comportamiento original)
+        const res = await api.get('/Data');
+        setDataList(res.data.data);
+        console.log('Datos obtenidos para admin/funcionario:', res.data.data);
+      }
     } catch (error) {
       console.error('Error al obtener Data:', error);
-      toast.error('Error al cargar los datos');
+      if (error.response?.status === 404) {
+        // Si no hay datos para el contratista
+        setDataList([]);
+        toast.info('No tienes análisis de comparación disponibles');
+      } else {
+        toast.error('Error al cargar los datos de comparación');
+      }
     }
+  };
+
+  const fetchData = async () => {
+    // Redirigir a la función específica para contratistas
+    await fetchDataForContratista();
   };
 
   const fetchDocumentos = async () => {
@@ -55,7 +105,7 @@ const DashboardData = () => {
       toast.loading('Ejecutando análisis...');
       await api.post('/Data', { document_management: selectedDocId });
       toast.success('Comparación ejecutada con éxito');
-      fetchData();
+      await fetchDataForContratista(); // Usar la función específica
       setShowModal(false);
     } catch (error) {
       console.error(error);
@@ -68,7 +118,7 @@ const DashboardData = () => {
     try {
       await api.delete(`/Data/${id}`);
       toast.success('Comparación eliminada');
-      fetchData();
+      await fetchDataForContratista(); // Usar la función específica
     } catch (error) {
       console.error(error);
       toast.error('Error al eliminar comparación');
@@ -159,18 +209,27 @@ const DashboardData = () => {
       <Header />
       
       <div className="container-fluid py-4 px-4">
+        {localStorage.getItem('role') === 'contratista' && (
+          <div className="alert alert-info mb-4" role="alert">
+            <i className="bi bi-info-circle me-2"></i>
+            <strong>Vista de Contratista:</strong> Solo se muestran las comparaciones asociadas a tu cuenta.
+          </div>
+        )}
+        
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2 className="mb-0 fw-bold text-primary">
             <i className="bi bi-file-earmark-diff me-2"></i>
-            Comparaciones por Documentos
+            {localStorage.getItem('role') === 'contratista' ? 'Mis Comparaciones de Documentos' : 'Comparaciones por Documentos'}
           </h2>
           <div>
             <Button variant="outline-primary" className="me-2" onClick={exportarExcelCompleto}>
               <i className="bi bi-file-excel me-2"></i>Exportar Todo
             </Button>
-            <Button variant="primary" onClick={() => setShowModal(true)}>
-              <i className="bi bi-plus-circle me-2"></i>Nueva Comparación
-            </Button>
+            {permissions.canCreate.data && (
+              <Button variant="primary" onClick={() => setShowModal(true)}>
+                <i className="bi bi-plus-circle me-2"></i>Nueva Comparación
+              </Button>
+            )}
           </div>
         </div>
 
@@ -183,8 +242,16 @@ const DashboardData = () => {
           <Card className="text-center py-5 shadow-sm border-0">
             <Card.Body>
               <i className="bi bi-folder-x text-muted" style={{ fontSize: '3rem' }}></i>
-              <h5 className="mt-3 text-muted">No hay comparaciones disponibles</h5>
-              <p className="text-muted">Crea tu primera comparación haciendo clic en el botón "Nueva Comparación"</p>
+              <h5 className="mt-3 text-muted">
+                {localStorage.getItem('role') === 'contratista' 
+                  ? 'No tienes comparaciones disponibles' 
+                  : 'No hay comparaciones disponibles'}
+              </h5>
+              <p className="text-muted">
+                {localStorage.getItem('role') === 'contratista'
+                  ? 'Actualmente no tienes análisis de comparación de documentos asociados a tu cuenta.'
+                  : 'Crea tu primera comparación haciendo clic en el botón "Nueva Comparación"'}
+              </p>
             </Card.Body>
           </Card>
         ) : (

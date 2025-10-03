@@ -29,22 +29,74 @@ export default function Contracts() {
   const [idContrato, setIdContrato] = useState(null);
   const [form, setForm] = useState({
     typeofcontract: "",
-    starteDate: "",
+    startDate: "",
     endDate: "",
     contractNumber: "",
+    state: "",
   });
-  // obtener usuarios de la api
+  // obtener contratos de la api - filtrados para contratistas
   const obtenerCotratos = async () => {
     try {
-      const res = await api.get(`/Contracts`);
+      setCargando(true);
+      setError("");
+      
+      // Obtener información del usuario actual
+      const user = JSON.parse(localStorage.getItem("user"));
+      const userRole = localStorage.getItem('role');
+      const userId = user?._id;
 
-      setContracts(res.data.data);
-      console.log(res.data.data);
+      console.log('Usuario actual:', { userId, userRole });
+
+      if (userRole === 'contratista') {
+        // Para contratistas: obtener información del contratista y su contrato asociado
+        if (!userId) {
+          setError('No se pudo obtener información del usuario');
+          return;
+        }
+
+        console.log('Obteniendo información de contratistas...');
+        // Obtener información del contratista para encontrar su contrato asociado
+        const contractorRes = await api.get(`/Users/Contractor`);
+        console.log('Respuesta de contratistas:', contractorRes.data);
+
+        const contractorInfo = contractorRes.data.data.find(contractor => 
+          contractor.user?._id === userId
+        );
+
+        console.log('Información del contratista encontrada:', contractorInfo);
+
+        if (contractorInfo && contractorInfo.contract) {
+          // Si tiene contrato asociado, mostrarlo en un array
+          console.log('Contrato asociado encontrado:', contractorInfo.contract);
+          setContracts([contractorInfo.contract]);
+          toast.success('Contrato cargado exitosamente');
+        } else {
+          // Si no tiene contrato asociado, mostrar array vacío
+          setContracts([]);
+          setError('No tienes un contrato asignado');
+          console.log('No se encontró contrato asociado para el usuario');
+        }
+      } else {
+        // Para admin y funcionarios: obtener todos los contratos
+        console.log('Obteniendo todos los contratos para admin/funcionario...');
+        const res = await api.get(`/Contracts`);
+        setContracts(res.data.data);
+        console.log('Contratos obtenidos para admin/funcionario:', res.data.data);
+      }
+
     } catch (err) {
-      toast.error("Erros al cargar los usuario", {
-        description:
-          err.response?.data?.message || "Error en el  en el servidor",
-      });
+      console.error('Error al obtener contratos:', err);
+      
+      if (err.response?.status === 404) {
+        // Si es un contratista sin contrato asignado
+        setContracts([]);
+        setError('No tienes un contrato asignado');
+      } else {
+        setError(`Error al cargar los contratos: ${err.response?.data?.message || err.message}`);
+        toast.error("Error al cargar los contratos", {
+          description: err.response?.data?.message || "Error en el servidor",
+        });
+      }
     } finally {
       setCargando(false);
     }
@@ -59,15 +111,22 @@ export default function Contracts() {
   };
 
   const crearContrato = async () => {
+    // Verificar permisos antes de crear
+    if (!permissions.canCreate.contracts) {
+      toast.error("No tienes permisos para crear contratos");
+      return;
+    }
+
     const loadingContract = toast.loading("Cargando...");
     try {
       const res = await api.post(`/Contracts`, form);
       setMostrarModal(false);
       setForm({
         typeofcontract: "",
-        starteDate: "",
+        startDate: "",
         endDate: "",
         contractNumber: "",
+        state: "",
       });
       toast.success("Contracto creado exitosamente", {
         id: loadingContract,
@@ -77,15 +136,21 @@ export default function Contracts() {
     } catch (err) {
       toast.error("Error al crear un contrato", {
         id: loadingContract,
-        description: err?.response?.data?.message,
+        description: err?.response?.data?.message || "No tienes permisos para esta acción",
       });
     }
   };
   // Modal para crear
   const abrirModalCrearContrato = () => {
+    // Verificar permisos antes de abrir modal
+    if (!permissions.canCreate.contracts) {
+      toast.error("No tienes permisos para crear contratos");
+      return;
+    }
+
     setForm({
       typeofcontract: "",
-      starteDate: "",
+      startDate: "",
       endDate: "",
       contractNumber: "",
       state: "",
@@ -97,11 +162,16 @@ export default function Contracts() {
 
   //   Modal editar
   const abrirModalEditar = (contract) => {
+    // Verificar permisos antes de abrir modal de edición
+    if (!permissions.canEdit.contracts) {
+      toast.error("No tienes permisos para editar contratos");
+      return;
+    }
+
     setForm({
       typeofcontract: contract.typeofcontract,
-      starteDate: contract.starteDate,
+      startDate: contract.startDate,
       endDate: contract.endDate,
-      starteDate: contract.starteDate,
       contractNumber: contract.contractNumber,
       state: contract.state,
     });
@@ -112,6 +182,12 @@ export default function Contracts() {
 
   //   Actualizar contratos
   const actualizarContratos = async () => {
+    // Verificar permisos antes de actualizar
+    if (!permissions.canEdit.contracts) {
+      toast.error("No tienes permisos para editar contratos");
+      return;
+    }
+
     const contractUpdate = toast.loading("Cargandoooo");
     try {
       const datosActualizados = { ...form };
@@ -127,13 +203,19 @@ export default function Contracts() {
     } catch (err) {
       toast.error("Error al actualizar el contrato", {
         id: contractUpdate,
-        description: err?.response?.data?.message || "Error en el servidor",
+        description: err?.response?.data?.message || "No tienes permisos para esta acción",
       });
     }
   };
 
   //   Borrar contratos
   const eliminarContrato = async (idContrato) => {
+    // Verificar permisos antes de eliminar
+    if (!permissions.canDelete.contracts) {
+      toast.error("No tienes permisos para eliminar contratos");
+      return;
+    }
+
     const confirmar = window.confirm("¿Quieres eliminar este contrato?");
     if (!confirmar) return;
     const loadingContractDelete = toast.loading("Cargando...");
@@ -147,8 +229,7 @@ export default function Contracts() {
     } catch (err) {
       toast.error("Error al eliminar el contrato", {
         id: loadingContractDelete,
-        description:
-          error?.response?.data?.message || "Error al eliminar el contratro",
+        description: err?.response?.data?.message || "No tienes permisos para esta acción",
       });
     }
   };
@@ -164,21 +245,23 @@ export default function Contracts() {
               <div className="d-flex align-items-center">
                 <h3 className="mb-0 fw-semibold text-gray-800">
                   <i className="bi bi-file-earmark-text-fill me-2 text-primary"></i>
-                  Listado de Contratos
+                  {localStorage.getItem('role') === 'contratista' ? 'Mi Contrato' : 'Listado de Contratos'}
                 </h3>
                 <span className="badge bg-primary-soft text-primary ms-3">
-                  {contracts.length} registros
+                  {contracts.length} {contracts.length === 1 ? 'contrato' : 'registros'}
                 </span>
               </div>
 
-              <Button
-                variant="primary"
-                onClick={abrirModalCrearContrato}
-                className="d-flex align-items-center"
-              >
-                <i className="bi bi-plus-lg me-2"></i>
-                Agregar Contrato
-              </Button>
+              {permissions.canCreate.contracts && (
+                <Button
+                  variant="primary"
+                  onClick={abrirModalCrearContrato}
+                  className="d-flex align-items-center"
+                >
+                  <i className="bi bi-plus-lg me-2"></i>
+                  Agregar Contrato
+                </Button>
+              )}
             </div>
 
             {/* Contenido */}
@@ -192,6 +275,14 @@ export default function Contracts() {
                 <i className="bi bi-exclamation-triangle-fill me-2"></i>
                 {error}
               </Alert>
+            ) : contracts.length === 0 ? (
+              <div className="text-center py-5">
+                <i className="bi bi-file-earmark-text display-1 text-muted mb-3"></i>
+                <h4 className="text-muted">No tienes contratos asignados</h4>
+                <p className="text-muted">
+                  Actualmente no tienes ningún contrato asociado a tu cuenta.
+                </p>
+              </div>
             ) : (
               <div className="table-responsive">
                 <Table hover className="mb-0">
@@ -201,6 +292,7 @@ export default function Contracts() {
                       <th>Fecha inicio</th>
                       <th>Fecha fin</th>
                       <th># Contrato</th>
+                      <th>Valor Total</th>
                       <th>Estado</th>
                       <th className="pe-4 text-end">Acciones</th>
                     </tr>
@@ -212,25 +304,37 @@ export default function Contracts() {
                           {contract.typeofcontract}
                         </td>
                         <td>
-                          {new Date(contract.starteDate).toLocaleDateString()}
+                          {contract.startDate ? new Date(contract.startDate).toLocaleDateString() : 'No disponible'}
                         </td>
                         <td>
-                          {new Date(contract.endDate).toLocaleDateString()}
+                          {contract.endDate ? new Date(contract.endDate).toLocaleDateString() : 'No disponible'}
                         </td>
                         <td>
                           <span className="badge bg-secondary bg-opacity-10 text-secondary">
                             #{contract.contractNumber}
                           </span>
                         </td>
+                        <td className="fw-medium">
+                          {contract.totalValue ? 
+                            new Intl.NumberFormat('es-CO', {
+                              style: 'currency',
+                              currency: 'COP',
+                              minimumFractionDigits: 0
+                            }).format(contract.totalValue) : 
+                            'No disponible'
+                          }
+                        </td>
                         <td>
                           <span
                             className={`badge ${
-                              contract.state === "Activo"
+                              (contract.state === true || contract.state === "Activo")
                                 ? "bg-success bg-opacity-10 text-success"
                                 : "bg-danger bg-opacity-10 text-danger"
                             }`}
                           >
-                            {contract.state}
+                            {contract.state === true ? "Activo" : 
+                             contract.state === false ? "Inactivo" : 
+                             contract.state || "No disponible"}
                           </span>
                         </td>
                         <td className="pe-4">
@@ -307,12 +411,12 @@ export default function Contracts() {
 
             <Row className="g-3">
               <Col md={6}>
-                <Form.Group controlId="starteDate">
+                <Form.Group controlId="startDate">
                   <Form.Label>Fecha de Inicio</Form.Label>
                   <Form.Control
                     type="date"
-                    name="starteDate"
-                    value={form.starteDate?.substring(0, 10) || ""}
+                    name="startDate"
+                    value={form.startDate?.substring(0, 10) || ""}
                     onChange={handleChange}
                     required
                     className="form-control-lg"
@@ -367,18 +471,20 @@ export default function Contracts() {
           <Button variant="light" onClick={() => setMostrarModal(false)}>
             Cancelar
           </Button>
-          <Button
-            variant={modoEdicion ? "warning" : "primary"}
-            onClick={modoEdicion ? actualizarContratos : crearContrato}
-            className="d-flex align-items-center"
-          >
-            <i
-              className={`bi ${
-                modoEdicion ? "bi-arrow-repeat" : "bi-save"
-              } me-2`}
-            ></i>
-            {modoEdicion ? "Actualizar" : "Guardar"}
-          </Button>
+          {((modoEdicion && permissions.canEdit.contracts) || (!modoEdicion && permissions.canCreate.contracts)) && (
+            <Button
+              variant={modoEdicion ? "warning" : "primary"}
+              onClick={modoEdicion ? actualizarContratos : crearContrato}
+              className="d-flex align-items-center"
+            >
+              <i
+                className={`bi ${
+                  modoEdicion ? "bi-arrow-repeat" : "bi-save"
+                } me-2`}
+              ></i>
+              {modoEdicion ? "Actualizar" : "Guardar"}
+            </Button>
+          )}
         </Modal.Footer>
       </Modal>
     </div>

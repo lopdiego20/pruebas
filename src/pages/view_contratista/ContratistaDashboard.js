@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Card, Badge, ListGroup, Button, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Badge, Button, Spinner, Table } from 'react-bootstrap';
 import { 
   PersonFill, 
   FileEarmarkTextFill, 
@@ -8,12 +8,53 @@ import {
   ClockHistory,
   CheckCircleFill,
   ExclamationTriangleFill,
-  FileEarmarkPdf
+  FileEarmarkPdf,
+  CalendarEvent,
+  CurrencyDollar,
+  InfoCircle,
+  EnvelopeFill,
+  TelephoneFill,
+  HouseFill,
+  CreditCardFill
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import api from '../../services/api';
 import { toast } from 'sonner';
+
+// Estilos para las animaciones
+const hoverStyles = `
+  .hover-scale {
+    transition: transform 0.2s ease-in-out;
+  }
+  .hover-scale:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+  }
+  .bg-primary-soft {
+    background-color: rgba(13, 110, 253, 0.1);
+  }
+  .contract-details-enter {
+    animation: slideDown 0.3s ease-out;
+  }
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e9ecef;
+  }
+  .table tbody tr:last-child td {
+    border-bottom: none;
+  }
+`;
 
 // Obtener el nombre del usuario logueado
 const userName = (() => {
@@ -33,8 +74,9 @@ const ContratistaDashboard = () => {
     totalAnalysis: 0
   });
   const [contractInfo, setContractInfo] = useState(null);
-  const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showContractDetails, setShowContractDetails] = useState(false);
+  const [showProfileDetails, setShowProfileDetails] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,11 +102,20 @@ const ContratistaDashboard = () => {
       }
 
       // Obtener datos del dashboard en paralelo
-      const [documentsRes, dataRes, contractorRes] = await Promise.all([
+      const promises = [
         api.get('/Documents').catch(() => ({ data: { data: [] } })),
         api.get('/Data').catch(() => ({ data: { data: [] } })),
         api.get(`/Users/Contractor`).catch(() => ({ data: { data: [] } }))
-      ]);
+      ];
+
+      // Solo obtener contratos si el usuario tiene permisos para verlos
+      const userRole = localStorage.getItem('role')?.toLowerCase();
+      if (userRole === 'admin' || userRole === 'funcionario') {
+        promises.push(api.get('/Contracts').catch(() => ({ data: { data: [] } })));
+      }
+
+      const results = await Promise.all(promises);
+      const [documentsRes, dataRes, contractorRes, contractsRes] = results;
 
       // Filtrar documentos y análisis del contratista actual
       const userDocuments = documentsRes.data.data.filter(doc => 
@@ -94,33 +145,6 @@ const ContratistaDashboard = () => {
 
       setContractInfo(contractorInfo);
 
-      // Actividades recientes (simular hasta que tengamos endpoint específico)
-      const activities = [
-        { 
-          id: 1, 
-          type: 'document', 
-          message: `${totalDocs > 0 ? 'Documentos gestionados' : 'Sin documentos'}`, 
-          time: 'Hoy',
-          status: totalDocs > 0 ? 'success' : 'warning'
-        },
-        { 
-          id: 2, 
-          type: 'analysis', 
-          message: `${userAnalysis.length} análisis realizados`, 
-          time: 'Esta semana',
-          status: userAnalysis.length > 0 ? 'success' : 'info'
-        },
-        { 
-          id: 3, 
-          type: 'contract', 
-          message: contractorInfo?.contract ? 'Contrato asignado' : 'Sin contrato asignado', 
-          time: 'Estado actual',
-          status: contractorInfo?.contract ? 'success' : 'warning'
-        }
-      ];
-
-      setRecentActivities(activities);
-
     } catch (err) {
       console.error('Error al cargar datos del dashboard:', err);
       toast.error('Error al cargar datos del dashboard', {
@@ -131,9 +155,35 @@ const ContratistaDashboard = () => {
     }
   };
 
-  const cerrarSesion = () => {
-    localStorage.clear();
-    navigate('/');
+  const toggleContractDetails = () => {
+    setShowContractDetails(!showContractDetails);
+  };
+
+  const toggleProfileDetails = () => {
+    setShowProfileDetails(!showProfileDetails);
+    
+    // Debug: mostrar los datos del usuario en consola
+    if (!showProfileDetails) {
+      console.log('=== DEBUG: Datos del usuario ===');
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        console.log('User completo:', user);
+        console.log('Propiedades disponibles:', Object.keys(user || {}));
+        console.log('firstName:', user?.firstName);
+        console.log('firsName (error tipográfico):', user?.firsName);
+        console.log('lastName:', user?.lastName);
+        console.log('email:', user?.email);
+        console.log('identificationNumber:', user?.identificationNumber);
+        console.log('identificationType:', user?.identificationType);
+        console.log('phone:', user?.phone);
+        console.log('address:', user?.address);
+        console.log('state:', user?.state);
+        console.log('createdAt:', user?.createdAt);
+      } catch (error) {
+        console.log('Error al parsear user:', error);
+      }
+      console.log('=== Fin DEBUG ===');
+    }
   };
 
   if (loading) {
@@ -152,22 +202,21 @@ const ContratistaDashboard = () => {
 
   return (
     <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      {/* Agregar estilos CSS */}
+      <style>{hoverStyles}</style>
+      
       <Header />
       
       <Container fluid className="px-4 py-4">
         <Row className="g-4 mb-4">
           <Col>
-            <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center">
               <div className="d-flex align-items-center">
                 <h2 className="mb-0 fw-bold">
                   👋 Hola, {userName}
                 </h2>
                 <span className="badge bg-info ms-3">Contratista</span>
               </div>
-              <Button variant="outline-danger" onClick={cerrarSesion}>
-                <i className="bi bi-box-arrow-right me-2"></i>
-                Cerrar Sesión
-              </Button>
             </div>
             <p className="text-muted mb-0 mt-1">
               Bienvenido a tu panel de control
@@ -189,10 +238,16 @@ const ContratistaDashboard = () => {
                       <h5 className="mb-1">Contrato Asignado</h5>
                       <p className="text-muted mb-0">
                         {contractInfo.contract ? (
-                          <span className="text-success">
-                            <CheckCircleFill className="me-1" />
-                            Contrato activo - ID: {contractInfo.contract}
-                          </span>
+                          <div>
+                            <span className="text-success">
+                              <CheckCircleFill className="me-1" />
+                              Contrato #{contractInfo.contract.contractNumber || contractInfo.contract._id}
+                            </span>
+                            <br />
+                            <small className="text-muted">
+                              Tipo: {contractInfo.contract.typeofcontract || 'No especificado'}
+                            </small>
+                          </div>
                         ) : (
                           <span className="text-warning">
                             <ExclamationTriangleFill className="me-1" />
@@ -204,12 +259,124 @@ const ContratistaDashboard = () => {
                     {contractInfo.contract && (
                       <Button 
                         variant="outline-info" 
-                        onClick={() => navigate('/contratista/contratos')}
+                        onClick={toggleContractDetails}
                       >
-                        Ver Detalles
+                        {showContractDetails ? 'Ocultar Detalles' : 'Ver Detalles'}
                       </Button>
                     )}
                   </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {/* Tabla de Detalles del Contrato */}
+        {showContractDetails && contractInfo && contractInfo.contract && (
+          <Row className="g-4 mb-4 contract-details-enter">
+            <Col>
+              <Card className="border-0 shadow-sm">
+                <Card.Header className="bg-light border-bottom">
+                  <h5 className="mb-0 fw-semibold text-dark">
+                    <FileEarmarkTextFill className="me-2 text-info" />
+                    Detalles del Contrato
+                  </h5>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  <Table responsive striped hover className="mb-0">
+                    <tbody>
+                      <tr>
+                        <td className="fw-semibold text-muted" style={{width: '30%'}}>Número de Contrato</td>
+                        <td>#{contractInfo.contract.contractNumber || 'No especificado'}</td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Tipo de Contrato</td>
+                        <td>{contractInfo.contract.typeofcontract || 'No especificado'}</td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Fecha de Inicio</td>
+                        <td>
+                          {contractInfo.contract.startDate 
+                            ? new Date(contractInfo.contract.startDate).toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : 'No especificada'
+                          }
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Fecha de Finalización</td>
+                        <td>
+                          {contractInfo.contract.endDate 
+                            ? new Date(contractInfo.contract.endDate).toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : 'No especificada'
+                          }
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Estado</td>
+                        <td>
+                          <Badge bg={contractInfo.contract.state ? 'success' : 'danger'}>
+                            {contractInfo.contract.state ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Valor del Período</td>
+                        <td>
+                          {contractInfo.contract.periodValue 
+                            ? `$${parseInt(contractInfo.contract.periodValue).toLocaleString('es-ES')}`
+                            : 'No especificado'
+                          }
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Valor Total</td>
+                        <td>
+                          {contractInfo.contract.totalValue 
+                            ? `$${parseInt(contractInfo.contract.totalValue).toLocaleString('es-ES')}`
+                            : 'No especificado'
+                          }
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Objetivo del Contrato</td>
+                        <td style={{whiteSpace: 'pre-wrap'}}>
+                          {contractInfo.contract.objectiveContract || 'No especificado'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Extensión</td>
+                        <td>
+                          <Badge bg={contractInfo.contract.extension ? 'warning' : 'secondary'}>
+                            {contractInfo.contract.extension ? 'Sí' : 'No'}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Adición</td>
+                        <td>
+                          <Badge bg={contractInfo.contract.addiction ? 'warning' : 'secondary'}>
+                            {contractInfo.contract.addiction ? 'Sí' : 'No'}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">Suspensión</td>
+                        <td>
+                          <Badge bg={contractInfo.contract.suspension ? 'danger' : 'secondary'}>
+                            {contractInfo.contract.suspension ? 'Sí' : 'No'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </Table>
                 </Card.Body>
               </Card>
             </Col>
@@ -333,94 +500,212 @@ const ContratistaDashboard = () => {
               </Card.Body>
               <Card.Footer className="bg-transparent border-0 py-3">
                 <button 
-                  onClick={() => navigate('/contratista/usuarios/contratistas')}
+                  onClick={toggleProfileDetails}
                   className="btn btn-link text-info text-decoration-none small fw-semibold p-0"
                 >
-                  Ver perfil <ArrowRightShort size={18} />
+                  {showProfileDetails ? 'Ocultar perfil' : 'Ver perfil'} <ArrowRightShort size={18} />
                 </button>
               </Card.Footer>
             </Card>
           </Col>
         </Row>
 
-        {/* Accesos rápidos y actividad reciente */}
-        <Row className="g-4">
-          <Col xl={8}>
-            <Card className="shadow-sm border-0 rounded-3 h-100">
-              <Card.Body>
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                  <Card.Title className="fw-semibold mb-0">Accesos Rápidos</Card.Title>
-                </div>
-                
-                <Row className="g-3">
-                  <Col md={6}>
-                    <Card className="border h-100 hover-scale" style={{ cursor: 'pointer' }} onClick={() => navigate('/contratista/documentos')}>
-                      <Card.Body className="text-center py-4">
-                        <FileEarmarkPdf size={32} className="text-primary mb-3" />
-                        <h6 className="fw-semibold">Gestión Documental</h6>
-                        <p className="text-muted small mb-0">Subir y gestionar documentos</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  
-                  <Col md={6}>
-                    <Card className="border h-100 hover-scale" style={{ cursor: 'pointer' }} onClick={() => navigate('/contratista/datos')}>
-                      <Card.Body className="text-center py-4">
-                        <BarChartFill size={32} className="text-success mb-3" />
-                        <h6 className="fw-semibold">Análisis de Datos</h6>
-                        <p className="text-muted small mb-0">Comparar y analizar información</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  
-                  <Col md={6}>
-                    <Card className="border h-100 hover-scale" style={{ cursor: 'pointer' }} onClick={() => navigate('/contratista/contratos')}>
-                      <Card.Body className="text-center py-4">
-                        <FileEarmarkTextFill size={32} className="text-info mb-3" />
-                        <h6 className="fw-semibold">Ver Contratos</h6>
-                        <p className="text-muted small mb-0">Consultar contratos asignados</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  
-                  <Col md={6}>
-                    <Card className="border h-100 hover-scale" style={{ cursor: 'pointer' }} onClick={() => navigate('/contratista/usuarios/admin')}>
-                      <Card.Body className="text-center py-4">
-                        <PersonFill size={32} className="text-secondary mb-3" />
-                        <h6 className="fw-semibold">Ver Usuarios</h6>
-                        <p className="text-muted small mb-0">Consultar información de usuarios</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          </Col>
+        {/* Tabla de Detalles del Perfil */}
+        {showProfileDetails && (
+          <Row className="g-4 mb-4 contract-details-enter">
+            <Col>
+              <Card className="border-0 shadow-sm">
+                <Card.Header className="bg-light border-bottom">
+                  <h5 className="mb-0 fw-semibold text-dark">
+                    <PersonFill className="me-2 text-info" />
+                    Información del Perfil
+                  </h5>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  <Table responsive striped hover className="mb-0">
+                    <tbody>
+                      <tr>
+                        <td className="fw-semibold text-muted" style={{width: '30%'}}>
+                          <PersonFill className="me-2 text-primary" />
+                          Nombre Completo
+                        </td>
+                        <td>
+                          {(() => {
+                            try {
+                              const user = JSON.parse(localStorage.getItem("user"));
+                              const firstName = user?.firsName || user?.firstName || '';
+                              const lastName = user?.lastName || '';
+                              return `${firstName} ${lastName}`.trim() || 'No especificado';
+                            } catch {
+                              return 'No especificado';
+                            }
+                          })()}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">
+                          <EnvelopeFill className="me-2 text-success" />
+                          Correo Electrónico
+                        </td>
+                        <td>
+                          {(() => {
+                            try {
+                              const user = JSON.parse(localStorage.getItem("user"));
+                              return user?.email || 'No especificado';
+                            } catch {
+                              return 'No especificado';
+                            }
+                          })()}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">
+                          <CreditCardFill className="me-2 text-warning" />
+                          Número de Identificación
+                        </td>
+                        <td>
+                          {(() => {
+                            try {
+                              const user = JSON.parse(localStorage.getItem("user"));
+                              return user?.idcard || 'No especificado';
+                            } catch {
+                              return 'No especificado';
+                            }
+                          })()}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">
+                          <InfoCircle className="me-2 text-info" />
+                          Cargo
+                        </td>
+                        <td>
+                          {(() => {
+                            try {
+                              const user = JSON.parse(localStorage.getItem("user"));
+                              return user?.post || 'No especificado';
+                            } catch {
+                              return 'No especificado';
+                            }
+                          })()}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">
+                          <TelephoneFill className="me-2 text-secondary" />
+                          Teléfono
+                        </td>
+                        <td>
+                          {(() => {
+                            try {
+                              const user = JSON.parse(localStorage.getItem("user"));
+                              return user?.telephone || 'No especificado';
+                            } catch {
+                              return 'No especificado';
+                            }
+                          })()}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">
+                          <PersonFill className="me-2 text-primary" />
+                          Rol
+                        </td>
+                        <td>
+                          <Badge bg="info">
+                            {localStorage.getItem('role') || 'No especificado'}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">
+                          <CheckCircleFill className="me-2 text-success" />
+                          Estado
+                        </td>
+                        <td>
+                          {(() => {
+                            try {
+                              const user = JSON.parse(localStorage.getItem("user"));
+                              return (
+                                <Badge bg={user?.state ? 'success' : 'danger'}>
+                                  {user?.state ? 'Activo' : 'Inactivo'}
+                                </Badge>
+                              );
+                            } catch {
+                              return <Badge bg="secondary">No especificado</Badge>;
+                            }
+                          })()}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="fw-semibold text-muted">
+                          <CalendarEvent className="me-2 text-warning" />
+                          Fecha de Creación
+                        </td>
+                        <td>
+                          {(() => {
+                            try {
+                              const user = JSON.parse(localStorage.getItem("user"));
+                              return user?.createdAt 
+                                ? new Date(user.createdAt).toLocaleDateString('es-ES', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })
+                                : 'No especificada';
+                            } catch {
+                              return 'No especificada';
+                            }
+                          })()}
+                        </td>
+                      </tr>
+                      {contractInfo && (
+                        <tr>
+                          <td className="fw-semibold text-muted">
+                            <FileEarmarkTextFill className="me-2 text-info" />
+                            Contrato Asignado
+                          </td>
+                          <td>
+                            {contractInfo.contract ? (
+                              <Badge bg="success">
+                                Sí - #{contractInfo.contract.contractNumber || contractInfo.contract._id}
+                              </Badge>
+                            ) : (
+                              <Badge bg="warning">
+                                Sin contrato asignado
+                              </Badge>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </Table>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
 
-          <Col xl={4}>
-            <Card className="shadow-sm border-0 rounded-3 h-100">
-              <Card.Body>
-                <Card.Title className="fw-semibold mb-4">Actividad Reciente</Card.Title>
-                <ListGroup variant="flush">
-                  {recentActivities.map((activity) => (
-                    <ListGroup.Item key={activity.id} className="border-0 px-0">
-                      <div className="d-flex align-items-start">
-                        <div className={`me-3 mt-1`}>
-                          {activity.type === 'document' && <FileEarmarkTextFill size={16} className={`text-${activity.status}`} />}
-                          {activity.type === 'analysis' && <BarChartFill size={16} className={`text-${activity.status}`} />}
-                          {activity.type === 'contract' && <FileEarmarkTextFill size={16} className={`text-${activity.status}`} />}
-                        </div>
-                        <div className="flex-grow-1">
-                          <p className="mb-1 small fw-medium">{activity.message}</p>
-                          <small className="text-muted">{activity.time}</small>
-                        </div>
-                        <Badge bg={activity.status} className="ms-2">
-                          {activity.status === 'success' ? '✓' : activity.status === 'warning' ? '⚠' : 'ℹ'}
-                        </Badge>
-                      </div>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
+        {/* Mensaje informativo de permisos */}
+        <Row className="g-4 mb-4">
+          <Col>
+            <Card className="border-warning border-2 bg-light">
+              <Card.Body className="py-3">
+                <div className="d-flex align-items-center">
+                  <div className="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
+                    <ExclamationTriangleFill size={20} className="text-warning" />
+                  </div>
+                  <div>
+                    <h6 className="mb-1 fw-semibold text-dark">Información de Permisos</h6>
+                    <p className="mb-0 text-muted small">
+                      Como contratista, puedes <strong>consultar</strong> contratos y gestionar tus documentos, 
+                      pero no puedes crear, editar o eliminar contratos. 
+                      Para realizar esas acciones, contacta con un administrador o funcionario.
+                    </p>
+                  </div>
+                </div>
               </Card.Body>
             </Card>
           </Col>

@@ -21,6 +21,7 @@ import { IoDocument,IoDocuments  } from "react-icons/io5"
 import "./Sidebar.css";
 
 import { Cpu, Power } from 'react-bootstrap-icons';
+import { ROLES } from '../config/rolesConfig';
 // import logo from '../assets/logo.png'; // 🧠 Asegúrate que esta ruta sea correcta
 
 export default function Sidebar() {
@@ -30,6 +31,9 @@ export default function Sidebar() {
   const [documentOpen, setDocumentOpen] = useState(false)
 
   const navigate = useNavigate();
+  
+  // Obtener el rol del usuario
+  const userRole = localStorage.getItem('role') || ROLES.CONTRATISTA;
 
   const toggleMenu = () => setOpen(!open);
 
@@ -61,23 +65,30 @@ export default function Sidebar() {
             <FaChartBar /> Dashboard
           </Link>
 
-          {/* Gestión de Usuario */}
-          <div className="menu-item" onClick={() => setUserOpen(!userOpen)}>
-            <FaUsers /> Gestión de Usuario{" "}
-            {userOpen ? <FaChevronUp /> : <FaChevronDown />}
-          </div>
-          {userOpen && (
-            <div className="submenu">
-              <Link to="/AdminUser" onClick={toggleMenu}>
-                <FaUserShield /> Admins
-              </Link>
-              <Link to="/FuncionaryUser" onClick={toggleMenu}>
-                <FaUserFriends /> Funcionarios
-              </Link>
-              <Link to="/ContractUser" onClick={toggleMenu}>
-                <FaUserTie /> Contratistas
-              </Link>
-            </div>
+          {/* Gestión de Usuario - Solo para Admin y Funcionario */}
+          {(userRole === ROLES.ADMIN || userRole === ROLES.FUNCIONARIO) && (
+            <>
+              <div className="menu-item" onClick={() => setUserOpen(!userOpen)}>
+                <FaUsers /> Gestión de Usuario{" "}
+                {userOpen ? <FaChevronUp /> : <FaChevronDown />}
+              </div>
+              {userOpen && (
+                <div className="submenu">
+                  {/* Admins - Solo para Admin */}
+                  {userRole === ROLES.ADMIN && (
+                    <Link to="/AdminUser" onClick={toggleMenu}>
+                      <FaUserShield /> Admins
+                    </Link>
+                  )}
+                  <Link to="/FuncionaryUser" onClick={toggleMenu}>
+                    <FaUserFriends /> Funcionarios
+                  </Link>
+                  <Link to="/ContractUser" onClick={toggleMenu}>
+                    <FaUserTie /> Contratistas
+                  </Link>
+                </div>
+              )}
+            </>
           )}
 
           {/* Gestion de contratos */}
@@ -105,9 +116,9 @@ export default function Sidebar() {
           <Link to="/Data" onClick={toggleMenu}>
             <FaCheckCircle /> Comparacion
           </Link>
-          <Link to="/reporte" onClick={toggleMenu}>
+          {/* <Link to="/reporte" onClick={toggleMenu}>
             <FaFileAlt /> Reporte
-          </Link>
+          </Link> */}
 
           <div
             onClick={() => {
