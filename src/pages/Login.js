@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Form, Button, Container, Alert } from "react-bootstrap";
+import { Form, Button } from "react-bootstrap";
 import LogoBogota from "../images/Bogota_Logo.png";
 import { toast } from 'sonner';
 
@@ -34,13 +34,8 @@ export default function Login() {
         description:'Inicio de sesion exitoso'
       })
 
-      //navigate(user.role.toLowerCase() === 'admin' ? '/dashboard' : '/');
-      if (user.role.toLowerCase()=== 'admin'){
-        navigate('/dashboard')}
-      else if(user.role.toLowerCase()==='funcionario'){
-        navigate('/dashboard')}
-      else if(user.role.toLowerCase()==='contratista'){
-        navigate('/dashboard')}
+
+      navigate('/dashboard');
     } catch (err) {
       const mensajeServidor =
         err.response?.data?.message || "Error desconocido del servidor";

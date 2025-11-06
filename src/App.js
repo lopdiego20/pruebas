@@ -25,7 +25,6 @@ import RoleRouter from "./components/RoleRoute";
 import { ROLES } from './constants/roles';
 import AdminComponent from './components/AdminComponent';
 import FuncionarioComponent from './components/FuncionarioComponent';
-// import { useAuth } from './context/AuthContext'; // Make sure you have this context
 import Usuarios from './components/Usuarios';
 
 //temporal

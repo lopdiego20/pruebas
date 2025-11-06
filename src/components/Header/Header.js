@@ -2,7 +2,7 @@ import React from 'react';
 import Sidebar from '../Sidebar';
 import { useNavigate } from 'react-router-dom';
 import { Container, Navbar, Nav } from 'react-bootstrap';
-import { Cpu, Power } from 'react-bootstrap-icons';
+import { Power } from 'react-bootstrap-icons';
 import './Header.css'
 import {ROLES} from '../../config/rolesConfig';
 

@@ -1,4 +1,6 @@
 import { Navigate } from 'react-router-dom';
+import PropsTypes from 'prop-types';
+import React from 'react';
 
 const ProtectedRoute = ({ children, allowedRoles, disableDelete = false }) => {
   const role = localStorage.getItem('role');
@@ -17,6 +19,14 @@ const ProtectedRoute = ({ children, allowedRoles, disableDelete = false }) => {
   }
   
   return children;
+};
+ProtectedRoute.propTypes = {
+  children: PropsTypes.node.isRequired,
+  allowedRoles: PropsTypes.arrayOf(PropsTypes.string).isRequired,
+  disableDelete: PropsTypes.bool
+};
+ProtectedRoute.defaultProps ={
+  disableDelete:false
 };
 
 export default ProtectedRoute;
