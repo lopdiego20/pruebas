@@ -172,7 +172,7 @@ const styles = {
     width: "300px", // Ajusta el tamaño de la imagen
   },
   image: {
-    width: "100%", // La imagen ocupa todo el espacio disponible
+    width: "100%", // La imagen ocupa el espacio disponible
     height: "auto", // Mantiene las proporciones
     borderRadius: "8px", // Opcional: redondear bordes de la imagen
   },
