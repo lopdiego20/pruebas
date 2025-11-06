@@ -1,15 +1,15 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from "./pages/Login";
 // Ruta del admin
 import AdminDashboard from "./pages/AdminDashboard";
 import FuncionaryDashboard from "./pages/view_funcionario/FuncionarioDashboard";
 import ContratistaDashboard from "./pages/view_contratista/ContratistaDashboard";
 // Usuarios
-import User_Admin from "./pages/view_admin/User/Admin/User_Admin";
-import User_Contract from "./pages/view_admin/User/Contract/User_Contract";
-import User_Funcionary from "./pages/view_admin/User/Funcionary/User_Funcionary";
+import UserAdmin from "./pages/view_admin/User/Admin/User_Admin";
+import UserContract from "./pages/view_admin/User/Contract/User_Contract";
+import UserFuncionary from "./pages/view_admin/User/Funcionary/User_Funcionary";
 
 // Gestion_Documental
 import DashboardPage from "./pages/view_admin/Document/DashboardPage";
@@ -25,7 +25,7 @@ import RoleRouter from "./components/RoleRoute";
 import { ROLES } from './constants/roles';
 import AdminComponent from './components/AdminComponent';
 import FuncionarioComponent from './components/FuncionarioComponent';
-import { useAuth } from './context/AuthContext'; // Make sure you have this context
+// import { useAuth } from './context/AuthContext'; // Make sure you have this context
 import Usuarios from './components/Usuarios';
 
 //temporal
@@ -54,9 +54,9 @@ function App() {
           {/* Dashboard dinámico según rol */}
           <Route path="/dashboard" element={<DashboardSelector />} />
           {/* Users */}
-          <Route path="/AdminUser" element={<User_Admin />} />
-          <Route path="/ContractUser" element={<User_Contract />} />
-          <Route path="/FuncionaryUser" element={<User_Funcionary />} />
+          <Route path="/AdminUser" element={<UserAdmin />} />
+          <Route path="/ContractUser" element={<UserContract />} />
+          <Route path="/FuncionaryUser" element={<UserFuncionary />} />
           {/* Contrato */}
           <Route path="/Contracts" element={<Contracts />} />
           {/* Gestion_Documental */}

@@ -4,11 +4,9 @@ import { Button, Table, Modal, Form, Card, Badge, Spinner, Accordion } from 'rea
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Header from '../../../components/Header/Header';
-import { usePermissions } from '../../../hooks/usePermissions';
 import api from '../../../services/api';
 
 const DashboardDocumentos = () => {
-  const permissions = usePermissions();
   const [documentos, setDocumentos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -28,37 +26,184 @@ const DashboardDocumentos = () => {
   const [activeAccordion, setActiveAccordion] = useState(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // Debug: Verificar datos de autenticación al cargar el componente
+  useEffect(() => {
+    console.log('=== DEBUG DASHBOARD DOCUMENTOS ===');
+    console.log('Token:', token ? 'Presente' : 'No encontrado');
+    console.log('Usuario:', user);
+    console.log('ID del usuario:', user?._id);
+    console.log('===================================');
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
+      // Validar que tengamos token antes de hacer la llamada
+      if (!token) {
+        toast.error('No hay token de autenticación');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Cargando datos sin verificar rol');
+
       try {
         await Promise.all([fetchDocumentos(), fetchUsuarios()]);
       } catch (error) {
         console.error('Error loading data:', error);
+        
+        if (error.response?.status === 401) {
+          toast.error('Token de autenticación inválido o expirado');
+        } else if (error.response?.status === 403) {
+          toast.error('No tienes permisos para acceder a esta sección');
+        } else {
+          toast.error(`Error al cargar datos: ${error.response?.data?.message || error.message}`);
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [token]);
 
   const fetchDocumentos = async () => {
     try {
-      const res = await api.get('/Documents');
-      setDocumentos(res.data.data);
+      console.log('=== INICIO fetchDocumentos ===');
+      console.log('Accediendo directamente sin verificar rol');
+      console.log('Usuario completo:', user);
+      console.log('User ID:', user?._id);
+      
+      // Acceso directo sin verificar rol - usar siempre la ruta de contratista
+      console.log('✅ Usando ruta específica sin verificación de rol');
+      await fetchDocumentosContratista();
+      
     } catch (error) {
-      console.error('Error al obtener documentos:', error);
-      toast.error('Error al cargar documentos');
+      console.error('❌ Error al obtener documentos:', error);
+      console.error('❌ URL que falló:', error.config?.url);
+      console.error('❌ Método:', error.config?.method);
+      console.error('❌ Headers:', error.config?.headers);
+      
+      if (error.response?.status === 401) {
+        toast.error('Token inválido al obtener documentos');
+      } else if (error.response?.status === 403) {
+        toast.warning(`No tienes permisos para acceder a: ${error.config?.url}`);
+        console.error('❌ Respuesta 403:', error.response?.data);
+        // Establecer array vacío sin mostrar error
+        setDocumentos([]);
+      } else {
+        toast.error(`Error al cargar documentos: ${error.response?.data?.message || error.message}`);
+      }
+      
+      // No lanzar error, establecer array vacío
+      setDocumentos([]);
+    }
+  };
+
+  const fetchDocumentosContratista = async () => {
+    try {
+      console.log('=== INICIO fetchDocumentosContratista ===');
+      console.log('Obteniendo documentos específicos para contratista...');
+      
+      // Verificar datos del usuario de manera más robusta
+      const userFromStorage = localStorage.getItem('user');
+      console.log('Raw user from localStorage:', userFromStorage);
+      
+      let parsedUser;
+      try {
+        parsedUser = JSON.parse(userFromStorage || '{}');
+      } catch (parseError) {
+        console.error('❌ Error parsing user data:', parseError);
+        toast.error('Error al leer datos del usuario');
+        setDocumentos([]);
+        return;
+      }
+      
+      console.log('Parsed user:', parsedUser);
+      console.log('User _id:', parsedUser._id);
+      console.log('User id (sin underscore):', parsedUser.id);
+      
+      // Intentar con _id primero, luego con id
+      const userId = parsedUser._id || parsedUser.id;
+      
+      console.log('Usuario desde localStorage:', parsedUser);
+      console.log('UserID extraído final:', userId);
+      console.log('Tipo de userId:', typeof userId);
+      
+      if (!userId) {
+        console.error('❌ No se encontró ID de usuario ni _id ni id');
+        toast.warning('No se pudo obtener información del usuario');
+        setDocumentos([]);
+        return;
+      }
+
+      // Usar la ruta específica para contratistas: /Documents/:userContract
+      const url = `/Documents/${userId}`;
+      console.log('🚀 Consultando URL específica:', url);
+      console.log('🚀 PUNTO CRÍTICO: A punto de hacer api.get()');
+      
+      const res = await api.get(url);
+      console.log('✅ Respuesta exitosa:', res.data);
+      console.log('✅ Status:', res.status);
+      
+      if (res.data && res.data.data) {
+        // Si hay documentos, mostrarlos
+        const documentos = Array.isArray(res.data.data) ? res.data.data : [res.data.data];
+        setDocumentos(documentos);
+        toast.success(`Se cargaron ${documentos.length} documento(s) exitosamente`);
+        console.log('✅ Documentos configurados:', documentos);
+      } else {
+        // Si no hay documentos
+        setDocumentos([]);
+        toast.info('No tienes documentos de gestión asociados');
+        console.log('ℹ️ No hay documentos en la respuesta');
+      }
+    } catch (error) {
+      console.error('❌ Error específico para contratista:', error);
+      console.error('❌ URL que falló:', error.config?.url);
+      console.error('❌ Datos del error:', error.response?.data);
+      console.error('❌ Status del error:', error.response?.status);
+      
+      if (error.response?.status === 401) {
+        toast.error('Token de autenticación inválido para contratista');
+      } else if (error.response?.status === 403) {
+        toast.warning(`Sin permisos para: ${error.config?.url}`);
+        console.error('❌ Mensaje del backend:', error.response?.data?.mesaage || error.response?.data?.message);
+      } else if (error.response?.status === 404) {
+        // No hay documentos para este contratista
+        setDocumentos([]);
+        toast.info('No tienes documentos de gestión creados aún');
+      } else {
+        toast.error(`Error al cargar documentos: ${error.response?.data?.message || error.message}`);
+      }
+      
+      setDocumentos([]);
     }
   };
 
   const fetchUsuarios = async () => {
     try {
-      const res = await api.get('/Users');
-      setUsuarios(res.data.data);
+      console.log('Obteniendo usuarios contratistas...');
+      
+      // Obtener directamente usuarios contratistas
+      const res = await api.get('/Users/Contractor?state=true');
+      console.log('Contractors cargados:', res.data.data);
+      setUsuarios(res.data.data || []);
+      
     } catch (error) {
       console.error('Error al obtener usuarios:', error);
-      toast.error('Error al cargar usuarios');
+      
+      if (error.response?.status === 401) {
+        toast.error('Token inválido al obtener usuarios');
+      } else if (error.response?.status === 403) {
+        toast.warning('Configurando usuario actual como fallback');
+        setUsuarios([user]); // Usar el usuario del localStorage
+      } else {
+        toast.error(`Error al cargar usuarios: ${error.response?.data?.message || error.message}`);
+      }
+      
+      // Usar el usuario actual como fallback
+      setUsuarios([user]);
     }
   };
 
@@ -189,19 +334,38 @@ const DashboardDocumentos = () => {
 
   return (
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh" }}>
-      <Header />
-      
-      <div className="container-fluid py-4 px-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="mb-0 fw-bold text-primary">
-            <i className="bi bi-folder me-2"></i>
-            Gestión Documental
-          </h2>
-          <Button variant="primary" onClick={abrirModalCrear}>
-            <i className="bi bi-plus-circle me-2"></i>
-            Agregar Gestión
-          </Button>
+      {/* Verificación de autenticación antes de mostrar el Header */}
+      {!token ? (
+        <div className="container-fluid py-4 px-4">
+          <div className="alert alert-danger" role="alert">
+            <i className="bi bi-exclamation-triangle me-2"></i>
+            <strong>Error de Autenticación:</strong> No se encontraron datos de sesión válidos.
+            <div className="mt-2">
+              <small>Token: {token ? 'Presente' : 'No encontrado'}</small>
+            </div>
+          </div>
         </div>
+      ) : (
+        <>
+          <Header />
+          
+          <div className="container-fluid py-4 px-4">
+            <div className="alert alert-info mb-4" role="alert">
+              <i className="bi bi-info-circle me-2"></i>
+              <strong>Gestión Documental:</strong> Accediendo a documentos de gestión. 
+              Puedes ver y gestionar los documentos disponibles.
+            </div>
+            
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h2 className="mb-0 fw-bold text-primary">
+                <i className="bi bi-folder me-2"></i>
+                Mi Gestión Documental
+              </h2>
+              <Button variant="primary" onClick={abrirModalCrear}>
+                <i className="bi bi-plus-circle me-2"></i>
+                Agregar Gestión
+              </Button>
+            </div>
 
         {loading ? (
           <div className="text-center py-5">
@@ -212,8 +376,12 @@ const DashboardDocumentos = () => {
           <Card className="text-center py-5 shadow-sm border-0">
             <Card.Body>
               <i className="bi bi-folder-x text-muted" style={{ fontSize: '3rem' }}></i>
-              <h5 className="mt-3 text-muted">No hay gestiones documentales</h5>
-              <p className="text-muted">Crea tu primera gestión haciendo clic en el botón "Agregar Gestión"</p>
+              <h5 className="mt-3 text-muted">
+                No tienes gestiones documentales disponibles
+              </h5>
+              <p className="text-muted">
+                No tienes documentos de gestión creados. Los administradores pueden crear documentos de gestión para tu cuenta.
+              </p>
             </Card.Body>
           </Card>
         ) : (
@@ -395,6 +563,8 @@ const DashboardDocumentos = () => {
           </Form>
         </Modal.Body>
       </Modal>
+        </>
+      )}
     </div>
   );
 };

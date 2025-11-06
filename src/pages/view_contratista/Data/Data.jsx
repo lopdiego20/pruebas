@@ -91,11 +91,35 @@ const DashboardData = () => {
 
   const fetchDocumentos = async () => {
     try {
-      const res = await api.get('/Documents');
-      setDocumentos(res.data.data);
+      // Para contratistas, usar la ruta específica que ya funciona
+      const user = JSON.parse(localStorage.getItem("user"));
+      const userRole = localStorage.getItem('role');
+      const userId = user?._id;
+
+      if (userRole === 'contratista') {
+        // Para contratistas: usar la ruta específica
+        const res = await api.get(`/Documents/${userId}`);
+        setDocumentos(res.data.data || []);
+        console.log('Documentos obtenidos para contratista:', res.data.data);
+      } else {
+        // Para admin y funcionarios: usar la ruta general
+        const res = await api.get('/Documents');
+        setDocumentos(res.data.data || []);
+      }
     } catch (error) {
       console.error('Error al obtener documentos:', error);
-      toast.error('Error al cargar los documentos');
+      
+      // Manejo más específico del error
+      if (error.response?.status === 403) {
+        console.log('Sin permisos para documentos, continuando con array vacío');
+        setDocumentos([]);
+      } else if (error.response?.status === 404) {
+        console.log('No hay documentos disponibles');
+        setDocumentos([]);
+      } else {
+        toast.error('Error al cargar los documentos');
+        setDocumentos([]);
+      }
     }
   };
 

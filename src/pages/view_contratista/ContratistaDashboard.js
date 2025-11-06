@@ -236,7 +236,7 @@ const ContratistaDashboard = () => {
                     </div>
                     <div className="flex-grow-1">
                       <h5 className="mb-1">Contrato Asignado</h5>
-                      <p className="text-muted mb-0">
+                      <div className="text-muted mb-0">
                         {contractInfo.contract ? (
                           <div>
                             <span className="text-success">
@@ -254,7 +254,7 @@ const ContratistaDashboard = () => {
                             Sin contrato asignado
                           </span>
                         )}
-                      </p>
+                      </div>
                     </div>
                     {contractInfo.contract && (
                       <Button 
