@@ -55,7 +55,12 @@ export default function Sidebar() {
 
   return (
     <>
-      <button className="hamburger-icon" onClick={toggleMenu}>
+      <button className="hamburger-icon"
+        onClick={toggleMenu}
+        aria-label="Abrir menú de navegación"
+        aria-expanded={open}
+        aria-controls="sidebar-menu"
+>
         <Cpu size={20} className="navbar-icon" style={{ marginBottom: "25px", marginLeft: "4px" }} />
       </button>
 
