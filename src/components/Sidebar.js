@@ -55,14 +55,14 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="hamburger-icon" onClick={toggleMenu}>
+      <button className="hamburger-icon" onClick={toggleMenu}>
         <Cpu size={20} className="navbar-icon" style={{ marginBottom: "25px", marginLeft: "4px" }} />
-      </div>
+      </button>
 
-      <div
+      <button
         className={`sidebar-overlay ${open ? "show" : ""}`}
         onClick={toggleMenu}
-      ></div>
+      ></button>
 
       <div className={`sidebar-menu ${open ? "open" : ""}`}>
         <div className="sidebar-header">
@@ -79,10 +79,10 @@ export default function Sidebar() {
           {/* Gestión de Usuario - Solo para Admin y Funcionario */}
           {(userRole === ROLES.ADMIN || userRole === ROLES.FUNCIONARIO) && (
             <>
-              <div className="menu-item" onClick={() => setUserOpen(!userOpen)}>
+              <button className="menu-item" onClick={() => setUserOpen(!userOpen)}>
                 <FaUsers /> Gestión de Usuario{" "}
                 {userOpen ? <FaChevronUp /> : <FaChevronDown />}
-              </div>
+              </button>
               {userOpen && (
                 <div className="submenu">
                   {/* Admins - Solo para Admin */}
@@ -109,10 +109,10 @@ export default function Sidebar() {
 
           {/* Gestion documental */}
 
-          <div className="menu-item" onClick={() => setDocumentOpen(!documentOpen)}>
+          <button className="menu-item" onClick={() => setDocumentOpen(!documentOpen)}>
             <FaFolderOpen /> Gestión Documental
             {documentOpen ? <FaChevronUp /> : <FaChevronDown />}
-          </div>
+          </button>
           {documentOpen && (
             <div className="submenu">
               <Link to="/Document" onClick={toggleMenu}>
@@ -131,7 +131,7 @@ export default function Sidebar() {
             <FaFileAlt /> Reporte
           </Link> */}
 
-          <div
+          <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -142,7 +142,7 @@ export default function Sidebar() {
             className="logout"
           >
             <FaSignOutAlt /> Cerrar sesión
-          </div>
+          </button>
         </nav>
       </div>
     </>
