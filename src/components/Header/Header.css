@@ -41,7 +41,7 @@
                     
                     &:hover {
                         color: #e53e3e;  /* Rojo suave */
-                        background: rgba(229, 62, 62, 0.05);
+                        background: #2c0000;  /* Rojo muy suave */
                         border: 1px solid rgba(229, 62, 62, 0.1);
                     }
                 }

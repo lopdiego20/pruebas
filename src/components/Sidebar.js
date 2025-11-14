@@ -1,28 +1,23 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  FaBars,
   FaUsers,
   FaUserTie,
   FaUserShield,
   FaUserFriends,
   FaFileContract,
   FaFolderOpen,
-  FaDatabase,
-  FaMoneyCheckAlt,
   FaChartBar,
   FaCheckCircle,
-  FaFileAlt,
   FaSignOutAlt,
   FaChevronDown,
   FaChevronUp,
 } from "react-icons/fa";
-import { IoDocument,IoDocuments  } from "react-icons/io5"
+import { IoDocument  } from "react-icons/io5"
 import "./Sidebar.css";
 
-import { Cpu, Power } from 'react-bootstrap-icons';
+import { Cpu } from 'react-bootstrap-icons';
 import { ROLES } from '../config/rolesConfig';
-// import logo from '../assets/logo.png'; // 🧠 Asegúrate que esta ruta sea correcta
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
@@ -46,17 +41,17 @@ export default function Sidebar() {
 
   const cerrarSesion = () => {
     console.log('🚨 [SIDEBAR] cerrarSesion() fue llamado!');
-    console.log('🚨 [SIDEBAR] Stack trace:', new Error().stack);
+    console.log('🚨 [SIDEBAR] Stack trace:', new Error("error en SIDEBAR").stack);
     
     // Confirmar antes de cerrar sesión
-    if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+    if (globalThis.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
       console.log('🚨 [SIDEBAR] Usuario confirmó cerrar sesión');
       localStorage.clear();
       navigate("/");
     } else {
       console.log('🚨 [SIDEBAR] Usuario canceló cerrar sesión');
     }
-  };
+  }
 
   return (
     <>
@@ -108,7 +103,7 @@ export default function Sidebar() {
           )}
 
           {/* Gestion de contratos */}
-          <Link to="/Contracts" onClick={toggleMenu}>
+          <Link to="/Contracts" onClick={() => setContractorOpen(!contractorOpen)}>
             <FaFileContract /> Contratos
           </Link>
 
