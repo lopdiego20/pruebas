@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [formData, setFormData] = useState({
     firsName: '',
-    lastname: '',
+    lastName: '',
     idcard: '',
     telephone: '',
     email: '',
@@ -243,12 +243,14 @@ export default function AdminDashboard() {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    const parsedValue = type === 'checkbox' ? checked : (name === 'state' ? (value === 'true') : value);
+
     setFormData(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: parsedValue
     }));
-    
+
     if (name === 'role') {
       setShowContractorFields(value === 'contratista');
     }
@@ -282,7 +284,7 @@ export default function AdminDashboard() {
         // Limpiar formulario
         setFormData({
           firsName: '',
-          lastname: '',
+          lastName: '',
           idcard: '',
           telephone: '',
           email: '',
@@ -536,8 +538,8 @@ export default function AdminDashboard() {
               <Form.Label>Apellido</Form.Label>
               <Form.Control
                 type="text"
-                name="lastname"
-                value={formData.lastname}
+                name="lastName"
+                value={formData.lastName}
                 onChange={handleInputChange}
                 required
               />
@@ -606,6 +608,19 @@ export default function AdminDashboard() {
             <option value="admin">Administrador</option>
             <option value="funcionario">Funcionario</option>
             <option value="contratista">Contratista</option>
+          </Form.Select>
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label>Estado</Form.Label>
+          <Form.Select
+            name="state"
+            value={formData.state ? 'true' : 'false'}
+            onChange={handleInputChange}
+            required
+          >
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
           </Form.Select>
         </Form.Group>
 
