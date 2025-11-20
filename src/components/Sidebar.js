@@ -1,3 +1,4 @@
+/* global globalThis */
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -13,7 +14,7 @@ import {
   FaChevronDown,
   FaChevronUp,
 } from "react-icons/fa";
-import { IoDocument  } from "react-icons/io5"
+import { IoDocument } from "react-icons/io5"
 import "./Sidebar.css";
 
 import { Cpu } from 'react-bootstrap-icons';
@@ -26,10 +27,10 @@ export default function Sidebar() {
   const [documentOpen, setDocumentOpen] = useState(false)
 
   const navigate = useNavigate();
-  
+
   // Obtener el rol del usuario
   const userRole = localStorage.getItem('role') || ROLES.CONTRATISTA;
-  
+
   // Debug: Verificar rol del usuario
   console.log('👤 [SIDEBAR] Rol del usuario:', userRole);
   console.log('👤 [SIDEBAR] ROLES disponibles:', ROLES);
@@ -42,9 +43,9 @@ export default function Sidebar() {
   const cerrarSesion = () => {
     console.log('🚨 [SIDEBAR] cerrarSesion() fue llamado!');
     console.log('🚨 [SIDEBAR] Stack trace:', new Error("error en SIDEBAR").stack);
-    
+
     // Confirmar antes de cerrar sesión
-    if (typeof window !== "undefined" && window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+    if (typeof globalThis !== "undefined" && globalThis.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
       console.log('🚨 [SIDEBAR] Usuario confirmó cerrar sesión');
       localStorage.clear();
       navigate("/");
@@ -55,20 +56,22 @@ export default function Sidebar() {
 
   return (
     <>
-      <button 
+      <button
         className="hamburger-icon"
         onClick={toggleMenu}
         aria-label="Abrir menú de navegación"
         aria-expanded={open}
         aria-controls="sidebar-menu"
-        >
-        <Cpu size={20}  />
+      >
+        <Cpu size={20} />
       </button>
 
-      <div
+      <button
         className={`sidebar-overlay ${open ? "show" : ""}`}
         onClick={toggleMenu}
-      ></div>
+        aria-label="Cerrar menú"
+        style={{ border: 'none', padding: 0 }} // Inline style to ensure reset for now, or rely on CSS
+      ></button>
 
       <div className={`sidebar-menu ${open ? "open" : ""}`}>
         <div className="sidebar-header">
@@ -85,10 +88,13 @@ export default function Sidebar() {
           {/* Gestión de Usuario - Solo para Admin y Funcionario */}
           {(userRole === ROLES.ADMIN || userRole === ROLES.FUNCIONARIO) && (
             <>
-              <div className="menu-item" onClick={() => setUserOpen(!userOpen)}>
+              <button
+                className="menu-item"
+                onClick={() => setUserOpen(!userOpen)}
+              >
                 <FaUsers /> Gestión de Usuario{" "}
                 {userOpen ? <FaChevronUp /> : <FaChevronDown />}
-              </div>
+              </button>
               {userOpen && (
                 <div className="submenu">
                   {/* Admins - Solo para Admin */}
@@ -115,10 +121,13 @@ export default function Sidebar() {
 
           {/* Gestion documental */}
 
-          <div className="menu-item" onClick={() => setDocumentOpen(!documentOpen)}>
+          <button
+            className="menu-item"
+            onClick={() => setDocumentOpen(!documentOpen)}
+          >
             <FaFolderOpen /> Gestión Documental
             {documentOpen ? <FaChevronUp /> : <FaChevronDown />}
-          </div>
+          </button>
           {documentOpen && (
             <div className="submenu">
               <Link to="/Document" onClick={toggleMenu}>
@@ -137,7 +146,7 @@ export default function Sidebar() {
             <FaFileAlt /> Reporte
           </Link> */}
 
-          <div
+          <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -148,7 +157,7 @@ export default function Sidebar() {
             className="logout"
           >
             <FaSignOutAlt /> Cerrar sesión
-          </div>
+          </button>
         </nav>
       </div>
     </>
