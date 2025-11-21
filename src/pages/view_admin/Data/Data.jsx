@@ -2,15 +2,155 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Table, Form, Modal, Spinner, Card, Badge } from 'react-bootstrap';
 import { toast } from 'sonner';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import PropTypes from 'prop-types';
 import Header from '../../../components/Header/Header';
 import api from '../../../services/api';
-import { usePermissions } from '../../../hooks/usePermissions';
+
+const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, actualizarDocumento, toggleEstadoDocumento }) => {
+  // Solo mostrar si el campo existe y tiene datos reales
+  if (!item[field]?.description || item[field].description.includes('prueba') || item[field].description.includes('test')) return null;
+
+  // Obtener el managementId del primer subesquema que tenga documentManagement
+  const managementId = item[field]?.documentManagement || item.documentManagement;
+  const isVisible = detalleVisible === `${item._id}-${field}`;
+
+  return (
+    <React.Fragment>
+      <tr>
+        <td>
+          <i className="bi bi-file-earmark-text text-primary me-2"></i>
+          {field.replaceAll(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+        </td>
+        <td>
+          <Badge bg={item[field].status ? 'success' : 'warning'}>
+            {item[field].status ? 'Aprobado' : 'Pendiente'}
+          </Badge>
+        </td>
+        <td>
+          <span className="text-muted">
+            {item[field].description || 'Sin descripción'}
+          </span>
+        </td>
+        <td>
+          <div className="d-flex gap-1 flex-wrap">
+            <Button
+              size="sm"
+              variant={isVisible ? 'info' : 'outline-info'}
+              onClick={() =>
+                setDetalleVisible(isVisible ? null : `${item._id}-${field}`)
+              }
+            >
+              <i className={`bi bi-${isVisible ? 'chevron-up' : 'chevron-down'} me-1`}></i>
+              {isVisible ? 'Ocultar' : 'Ver'}
+            </Button>
+
+            {managementId && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline-warning"
+                  onClick={() => actualizarDocumento(managementId, field)}
+                  title="Actualizar documento"
+                >
+                  <i className="bi bi-arrow-clockwise"></i>
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant={item[field].status ? 'outline-secondary' : 'outline-success'}
+                  onClick={() => toggleEstadoDocumento(managementId, field)}
+                  title={item[field].status ? 'Marcar como pendiente' : 'Marcar como aprobado'}
+                >
+                  <i className={`bi bi-${item[field].status ? 'pause-circle' : 'check-circle'}`}></i>
+                  <span className="ms-1 d-none d-md-inline">
+                    {item[field].status ? 'Pendiente' : 'Aprobar'}
+                  </span>
+                </Button>
+              </>
+            )}
+          </div>
+        </td>
+      </tr>
+      {isVisible && (
+        <tr>
+          <td colSpan="4">
+            <div className="p-3 bg-light border-start border-primary border-4">
+              <h6 className="fw-bold mb-3 text-primary">
+                <i className="bi bi-info-circle me-2"></i>
+                Detalles del Análisis - {field.replaceAll(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              </h6>
+              <div className="row">
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <strong className="text-dark">Usuario Comparación:</strong>
+                    <p className="mb-0 text-muted">{item[field].usercomparasion || 'No especificado'}</p>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <strong className="text-dark">Fecha de Creación:</strong>
+                    <p className="mb-0 text-muted">{new Date(item.createdAt).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <strong className="text-dark">ID de Gestión:</strong>
+                    <p className="mb-0 text-muted font-monospace">{item[field]?.documentManagement || 'No disponible'}</p>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <strong className="text-dark">Estado Actual:</strong>
+                    <p className="mb-0">
+                      <Badge bg={item[field].status ? 'success' : 'warning'}>
+                        {item[field].status ? 'Aprobado ✓' : 'Pendiente ⏳'}
+                      </Badge>
+                    </p>
+                  </div>
+                </div>
+                <div className="col-12">
+                  <div className="mb-3">
+                    <strong className="text-dark">Descripción Completa:</strong>
+                    <p className="mb-0 text-muted">{item[field].description || 'Sin descripción disponible'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Leyenda de acciones */}
+              <div className="mt-3 pt-3 border-top">
+                <h6 className="fw-bold text-secondary mb-2">Acciones disponibles:</h6>
+                <div className="d-flex flex-wrap gap-3">
+                  <span className="badge bg-light text-dark">
+                    <i className="bi bi-arrow-clockwise me-1"></i> Actualizar documento
+                  </span>
+                  <span className="badge bg-light text-dark">
+                    <i className="bi bi-check-circle me-1"></i> Aprobar/Marcar pendiente
+                  </span>
+                  <span className="badge bg-light text-dark">
+                    <i className="bi bi-eye me-1"></i> Ver detalles completos
+                  </span>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </React.Fragment>
+  );
+};
+
+DocumentRow.propTypes = {
+  item: PropTypes.object.isRequired,
+  field: PropTypes.string.isRequired,
+  detalleVisible: PropTypes.string,
+  setDetalleVisible: PropTypes.func.isRequired,
+  actualizarDocumento: PropTypes.func.isRequired,
+  toggleEstadoDocumento: PropTypes.func.isRequired,
+};
 
 const DashboardData = () => {
-  const permissions = usePermissions();
+
   const [dataList, setDataList] = useState([]);
   const [documentos, setDocumentos] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -41,6 +181,7 @@ const DashboardData = () => {
       await Promise.all([fetchDocumentos(), fetchData()]);
       toast.success('Datos actualizados correctamente');
     } catch (error) {
+      console.error('Error al actualizar datos:', error);
       toast.error('Error al actualizar datos');
     } finally {
       setRefreshing(false);
@@ -77,7 +218,7 @@ const DashboardData = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!selectedDocId) {
       toast.error('Por favor selecciona un documento para analizar');
       return;
@@ -89,21 +230,21 @@ const DashboardData = () => {
       loadingToast = toast.loading('Ejecutando análisis de documentos...', {
         description: 'Este proceso puede tomar varios minutos'
       });
-      
+
       await api.post(`/Data/${selectedDocId}`);
-      
+
       toast.success('Análisis ejecutado con éxito', {
         id: loadingToast,
         description: 'Los resultados están listos para revisar'
       });
-      
+
       // Recargar datos después del análisis
       await fetchData();
       setShowModal(false);
       setSelectedDocId('');
     } catch (error) {
       console.error('Error al ejecutar análisis:', error);
-      
+
       // Cerrar el toast de loading y mostrar error
       toast.error('Error al ejecutar el análisis', {
         id: loadingToast,
@@ -119,19 +260,19 @@ const DashboardData = () => {
     let loadingToast;
     try {
       loadingToast = toast.loading(`Actualizando ${field}...`);
-      
+
       await api.put(`/Data/${managementId}/${field}`);
-      
+
       toast.success('Documento actualizado exitosamente', {
         id: loadingToast,
         description: `El análisis de ${field} se ha actualizado`
       });
-      
+
       // Recargar la lista
       await fetchData();
     } catch (error) {
       console.error('Error al actualizar documento:', error);
-      
+
       toast.error('Error al actualizar el documento', {
         id: loadingToast,
         description: error.response?.data?.message || 'Error en el servidor'
@@ -144,19 +285,19 @@ const DashboardData = () => {
     let loadingToast;
     try {
       loadingToast = toast.loading(`Cambiando estado de ${field}...`);
-      
+
       await api.patch(`/Data/${managementId}/${field}/toggle`);
-      
+
       toast.success('Estado actualizado exitosamente', {
         id: loadingToast,
         description: `El estado de ${field} se ha cambiado`
       });
-      
+
       // Recargar la lista
       await fetchData();
     } catch (error) {
       console.error('Error al cambiar estado:', error);
-      
+
       toast.error('Error al cambiar el estado', {
         id: loadingToast,
         description: error.response?.data?.message || 'Error en el servidor'
@@ -166,63 +307,27 @@ const DashboardData = () => {
 
   const agruparPorDocumento = () => {
     const agrupado = {};
-    
-    dataList.forEach((item) => {
+
+    for (const item of dataList) {
       // Usar el contractorId para agrupar los análisis
       const contractorId = item.contractorId;
       if (!agrupado[contractorId]) {
         agrupado[contractorId] = [];
       }
       agrupado[contractorId].push(item);
-    });
-    
+    }
+
     return agrupado;
-  };
-
-  const exportarPDF = (datos, docName) => {
-    const doc = new jsPDF();
-    doc.text(`Resultados de comparación - ${docName}`, 10, 10);
-
-    let startY = 20;
-
-    datos.forEach((item) => {
-      const data = Object.entries(item)
-        .filter(([k]) => !['_id', '__v', 'createdAt', 'updatedAt', 'document_management'])
-        .map(([k, v]) => [k, String(v)]);
-
-      autoTable(doc, {
-        startY,
-        head: [['Campo', 'Valor']],
-        body: data,
-        styles: {
-          cellPadding: 5,
-          fontSize: 10,
-          valign: 'middle'
-        },
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: 255,
-          fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        }
-      });
-
-      startY = doc.lastAutoTable.finalY + 10;
-    });
-
-    doc.save(`comparacion_${docName}.pdf`);
   };
 
   const exportarExcel = (datos, docName) => {
     const hoja = datos.map((item) => {
       const obj = {};
-      Object.entries(item).forEach(([key, value]) => {
+      for (const [key, value] of Object.entries(item)) {
         if (!['_id', '__v', 'createdAt', 'updatedAt', 'document_management'].includes(key)) {
           obj[key] = value;
         }
-      });
+      }
       return obj;
     });
     const ws = XLSX.utils.json_to_sheet(hoja);
@@ -234,11 +339,11 @@ const DashboardData = () => {
   const exportarExcelCompleto = () => {
     const hoja = dataList.map((item) => {
       const obj = {};
-      Object.entries(item).forEach(([key, value]) => {
+      for (const [key, value] of Object.entries(item)) {
         if (!['_id', '__v', 'createdAt', 'updatedAt'].includes(key)) {
           obj[key] = value;
         }
-      });
+      }
       return obj;
     });
 
@@ -251,18 +356,7 @@ const DashboardData = () => {
   return (
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh" }}>
       <Header />
-      
-      <style jsx>{`
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-      
+
       <div className="container-fluid py-4 px-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2 className="mb-0 fw-bold text-primary">
@@ -270,8 +364,8 @@ const DashboardData = () => {
             Análisis de Documentos
           </h2>
           <div className="d-flex gap-2">
-            <Button 
-              variant="outline-primary" 
+            <Button
+              variant="outline-primary"
               onClick={refreshData}
               disabled={refreshing}
             >
@@ -333,9 +427,9 @@ const DashboardData = () => {
             {/* Lista de análisis agrupados */}
             {Object.entries(agruparPorDocumento()).map(([contractorId, analisis]) => {
               // Buscar información del contractor
-              const contractorInfo = analisis[0]; // Tomar el primer análisis para obtener info del contractor
+              // Tomar el primer análisis para obtener info del contractor
               const contractorName = `Contractor ${contractorId.slice(-8)}`; // Mostrar últimos 8 chars del ID
-              
+
               return (
                 <Card key={contractorId} className="mb-4 shadow-sm border-0">
                   <Card.Header className="bg-white border-0">
@@ -348,16 +442,8 @@ const DashboardData = () => {
                         </Badge>
                       </h5>
                       <div>
-                        <Button 
-                          variant="outline-danger" 
-                          size="sm" 
-                          className="me-2"
-                          onClick={() => exportarPDF(analisis, contractorName)}
-                        >
-                          <i className="bi bi-file-pdf me-1"></i>PDF
-                        </Button>
-                        <Button 
-                          variant="outline-success" 
+                        <Button
+                          variant="outline-success"
                           size="sm"
                           onClick={() => exportarExcel(analisis, contractorName)}
                         >
@@ -385,138 +471,18 @@ const DashboardData = () => {
                               'activityReport', 'taxQualityCertificate', 'socialSecurity', 'rut', 'rit',
                               'trainings', 'initiationRecord', 'accountCertification'
                             ];
-                            
-                            return documentFields.map(field => {
-                              // Solo mostrar si el campo existe y tiene datos reales
-                              if (!item[field] || !item[field].description || item[field].description.includes('prueba') || item[field].description.includes('test')) return null;
-                              
-                              // Obtener el managementId del primer subesquema que tenga documentManagement
-                              const managementId = item[field]?.documentManagement || item.documentManagement;
-                              
-                              return (
-                                <React.Fragment key={`${item._id}-${field}`}>
-                                  <tr>
-                                    <td>
-                                      <i className="bi bi-file-earmark-text text-primary me-2"></i>
-                                      {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                                    </td>
-                                    <td>
-                                      <Badge bg={item[field].status ? 'success' : 'warning'}>
-                                        {item[field].status ? 'Aprobado' : 'Pendiente'}
-                                      </Badge>
-                                    </td>
-                                    <td>
-                                      <span className="text-muted">
-                                        {item[field].description || 'Sin descripción'}
-                                      </span>
-                                    </td>
-                                    <td>
-                                      <div className="d-flex gap-1 flex-wrap">
-                                        <Button
-                                          size="sm"
-                                          variant={detalleVisible === `${item._id}-${field}` ? 'info' : 'outline-info'}
-                                          onClick={() =>
-                                            setDetalleVisible(detalleVisible === `${item._id}-${field}` ? null : `${item._id}-${field}`)
-                                          }
-                                        >
-                                          <i className={`bi bi-${detalleVisible === `${item._id}-${field}` ? 'chevron-up' : 'chevron-down'} me-1`}></i>
-                                          {detalleVisible === `${item._id}-${field}` ? 'Ocultar' : 'Ver'}
-                                        </Button>
-                                        
-                                        {managementId && (
-                                          <>
-                                            <Button
-                                              size="sm"
-                                              variant="outline-warning"
-                                              onClick={() => actualizarDocumento(managementId, field)}
-                                              title="Actualizar documento"
-                                            >
-                                              <i className="bi bi-arrow-clockwise"></i>
-                                            </Button>
-                                            
-                                            <Button
-                                              size="sm"
-                                              variant={item[field].status ? 'outline-secondary' : 'outline-success'}
-                                              onClick={() => toggleEstadoDocumento(managementId, field)}
-                                              title={item[field].status ? 'Marcar como pendiente' : 'Marcar como aprobado'}
-                                            >
-                                              <i className={`bi bi-${item[field].status ? 'pause-circle' : 'check-circle'}`}></i>
-                                              <span className="ms-1 d-none d-md-inline">
-                                                {item[field].status ? 'Pendiente' : 'Aprobar'}
-                                              </span>
-                                            </Button>
-                                          </>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                  {detalleVisible === `${item._id}-${field}` && (
-                                    <tr>
-                                      <td colSpan="4">
-                                        <div className="p-3 bg-light border-start border-primary border-4">
-                                          <h6 className="fw-bold mb-3 text-primary">
-                                            <i className="bi bi-info-circle me-2"></i>
-                                            Detalles del Análisis - {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                                          </h6>
-                                          <div className="row">
-                                            <div className="col-md-6">
-                                              <div className="mb-3">
-                                                <strong className="text-dark">Usuario Comparación:</strong>
-                                                <p className="mb-0 text-muted">{item[field].usercomparasion || 'No especificado'}</p>
-                                              </div>
-                                            </div>
-                                            <div className="col-md-6">
-                                              <div className="mb-3">
-                                                <strong className="text-dark">Fecha de Creación:</strong>
-                                                <p className="mb-0 text-muted">{new Date(item.createdAt).toLocaleString()}</p>
-                                              </div>
-                                            </div>
-                                            <div className="col-md-6">
-                                              <div className="mb-3">
-                                                <strong className="text-dark">ID de Gestión:</strong>
-                                                <p className="mb-0 text-muted font-monospace">{item[field]?.documentManagement || 'No disponible'}</p>
-                                              </div>
-                                            </div>
-                                            <div className="col-md-6">
-                                              <div className="mb-3">
-                                                <strong className="text-dark">Estado Actual:</strong>
-                                                <p className="mb-0">
-                                                  <Badge bg={item[field].status ? 'success' : 'warning'}>
-                                                    {item[field].status ? 'Aprobado ✓' : 'Pendiente ⏳'}
-                                                  </Badge>
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <div className="col-12">
-                                              <div className="mb-3">
-                                                <strong className="text-dark">Descripción Completa:</strong>
-                                                <p className="mb-0 text-muted">{item[field].description || 'Sin descripción disponible'}</p>
-                                              </div>
-                                            </div>
-                                          </div>
-                                          
-                                          {/* Leyenda de acciones */}
-                                          <div className="mt-3 pt-3 border-top">
-                                            <h6 className="fw-bold text-secondary mb-2">Acciones disponibles:</h6>
-                                            <div className="d-flex flex-wrap gap-3">
-                                              <span className="badge bg-light text-dark">
-                                                <i className="bi bi-arrow-clockwise me-1"></i> Actualizar documento
-                                              </span>
-                                              <span className="badge bg-light text-dark">
-                                                <i className="bi bi-check-circle me-1"></i> Aprobar/Marcar pendiente
-                                              </span>
-                                              <span className="badge bg-light text-dark">
-                                                <i className="bi bi-eye me-1"></i> Ver detalles completos
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )}
-                                </React.Fragment>
-                              );
-                            }).filter(Boolean);
+
+                            return documentFields.map(field => (
+                              <DocumentRow
+                                key={`${item._id}-${field}`}
+                                item={item}
+                                field={field}
+                                detalleVisible={detalleVisible}
+                                setDetalleVisible={setDetalleVisible}
+                                actualizarDocumento={actualizarDocumento}
+                                toggleEstadoDocumento={toggleEstadoDocumento}
+                              />
+                            ));
                           })}
                         </tbody>
                       </Table>
@@ -529,9 +495,9 @@ const DashboardData = () => {
         )}
       </div>
 
-      <Modal 
-        show={showModal} 
-        onHide={analyzing ? undefined : () => setShowModal(false)} 
+      <Modal
+        show={showModal}
+        onHide={analyzing ? undefined : () => setShowModal(false)}
         centered
         backdrop={analyzing ? 'static' : true}
         keyboard={!analyzing}
@@ -569,7 +535,7 @@ const DashboardData = () => {
                 Seleccione la gestión documental que desea analizar. Este proceso comparará todos los documentos asociados.
               </Form.Text>
             </Form.Group>
-            
+
             <div className="alert alert-info">
               <i className="bi bi-info-circle me-2"></i>
               <strong>Proceso de Análisis:</strong>
@@ -579,28 +545,28 @@ const DashboardData = () => {
                 <li>El proceso puede tomar varios minutos</li>
               </ul>
             </div>
-            
+
             <div className="d-flex justify-content-end gap-2">
-              <Button 
-                variant="light" 
+              <Button
+                variant="light"
                 onClick={() => setShowModal(false)}
                 disabled={analyzing}
               >
                 Cancelar
               </Button>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 type="submit"
                 disabled={analyzing}
               >
                 {analyzing ? (
                   <>
-                    <Spinner 
-                      as="span" 
-                      animation="border" 
-                      size="sm" 
-                      role="status" 
-                      aria-hidden="true" 
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
                       className="me-2"
                     />
                     Analizando...
