@@ -1,9 +1,9 @@
+/* global globalThis */
 import React, { useEffect, useState } from "react";
 import {
   Table,
   Container,
   Spinner,
-  Alert,
   Card,
   Button,
   Modal,
@@ -11,7 +11,6 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
-import axios from "axios";
 import "./Contracts.css";
 import api from "../../../services/api";
 import Header from "../../../components/Header/Header";
@@ -22,7 +21,7 @@ export default function Contracts() {
   const [contracts, setContracts] = useState([]);
   const permissions = usePermissions();
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
+
   const [mostrarModal, setMostrarModal] = useState(false);
   // Funciones para editar el modal
   const [modoEdicion, setModoEdicion] = useState(false);
@@ -63,7 +62,7 @@ export default function Contracts() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Convertir el estado a booleano
     if (name === 'state') {
       setForm({ ...form, [name]: value === 'true' });
@@ -166,7 +165,7 @@ export default function Contracts() {
 
   //   Borrar contratos
   const eliminarContrato = async (idContrato) => {
-    const confirmar = window.confirm("¿Quieres eliminar este contrato?");
+    const confirmar = globalThis.confirm("¿Quieres eliminar este contrato?");
     if (!confirmar) return;
     const loadingContractDelete = toast.loading("Cargando...");
     try {
@@ -180,7 +179,7 @@ export default function Contracts() {
       toast.error("Error al eliminar el contrato", {
         id: loadingContractDelete,
         description:
-          error?.response?.data?.message || "Error al eliminar el contratro",
+          err?.response?.data?.message || "Error al eliminar el contratro",
       });
     }
   };
@@ -195,8 +194,7 @@ export default function Contracts() {
             <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
               <div className="d-flex align-items-center">
                 <h3 className="mb-0 fw-semibold text-gray-800">
-                  <i className="bi bi-file-earmark-text-fill me-2 text-primary"></i>
-                  Listado de Contratos
+                  <i className="bi bi-file-earmark-text-fill me-2 text-primary"></i> Listado de Contratos
                 </h3>
                 <span className="badge bg-primary-soft text-primary ms-3">
                   {contracts.length} registros
@@ -208,8 +206,7 @@ export default function Contracts() {
                 onClick={abrirModalCrearContrato}
                 className="d-flex align-items-center"
               >
-                <i className="bi bi-plus-lg me-2"></i>
-                Agregar Contrato
+                <i className="bi bi-plus-lg me-2"></i> Agregar Contrato
               </Button>
             </div>
 
@@ -219,11 +216,6 @@ export default function Contracts() {
                 <Spinner animation="border" variant="primary" />
                 <p className="mt-2 text-muted">Cargando contratos...</p>
               </div>
-            ) : error ? (
-              <Alert variant="danger" className="m-4">
-                <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                {error}
-              </Alert>
             ) : (
               <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <Table hover className="mb-0" style={{ minWidth: '1200px' }}>
@@ -262,11 +254,10 @@ export default function Contracts() {
                         </td>
                         <td>
                           <span
-                            className={`badge ${
-                              contract.state === true
-                                ? "bg-success bg-opacity-10 text-success"
-                                : "bg-danger bg-opacity-10 text-danger"
-                            }`}
+                            className={`badge ${contract.state === true
+                              ? "bg-success bg-opacity-10 text-success"
+                              : "bg-danger bg-opacity-10 text-danger"
+                              }`}
                           >
                             {contract.state ? "Activo" : "Inactivo"}
                           </span>
@@ -284,33 +275,30 @@ export default function Contracts() {
                         </td>
                         <td>
                           <span
-                            className={`badge ${
-                              contract.extension
-                                ? "bg-info bg-opacity-10 text-info"
-                                : "bg-light text-muted"
-                            }`}
+                            className={`badge ${contract.extension
+                              ? "bg-info bg-opacity-10 text-info"
+                              : "bg-light text-muted"
+                              }`}
                           >
                             {contract.extension ? "Sí" : "No"}
                           </span>
                         </td>
                         <td>
                           <span
-                            className={`badge ${
-                              contract.addiction
-                                ? "bg-warning bg-opacity-10 text-warning"
-                                : "bg-light text-muted"
-                            }`}
+                            className={`badge ${contract.addiction
+                              ? "bg-warning bg-opacity-10 text-warning"
+                              : "bg-light text-muted"
+                              }`}
                           >
                             {contract.addiction ? "Sí" : "No"}
                           </span>
                         </td>
                         <td>
                           <span
-                            className={`badge ${
-                              contract.suspension
-                                ? "bg-danger bg-opacity-10 text-danger"
-                                : "bg-light text-muted"
-                            }`}
+                            className={`badge ${contract.suspension
+                              ? "bg-danger bg-opacity-10 text-danger"
+                              : "bg-light text-muted"
+                              }`}
                           >
                             {contract.suspension ? "Sí" : "No"}
                           </span>
@@ -324,8 +312,7 @@ export default function Contracts() {
                                 onClick={() => abrirModalEditar(contract)}
                                 className="d-flex align-items-center"
                               >
-                                <i className="bi bi-pencil-square me-1"></i>
-                                Editar
+                                <i className="bi bi-pencil-square me-1"></i> Editar
                               </Button>
                             )}
                             {permissions.canDelete.contracts && (
@@ -335,8 +322,7 @@ export default function Contracts() {
                                 onClick={() => eliminarContrato(contract._id)}
                                 className="d-flex align-items-center"
                               >
-                                <i className="bi bi-trash me-1"></i>
-                                Eliminar
+                                <i className="bi bi-trash me-1"></i> Eliminar
                               </Button>
                             )}
                           </div>
@@ -361,11 +347,9 @@ export default function Contracts() {
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-semibold">
             <i
-              className={`bi ${
-                modoEdicion ? "bi-pencil-square" : "bi-file-earmark-plus"
-              } me-2`}
-            ></i>
-            {modoEdicion ? "Editar Contrato" : "Crear Nuevo Contrato"}
+              className={`bi ${modoEdicion ? "bi-pencil-square" : "bi-file-earmark-plus"
+                } me-2`}
+            ></i> {modoEdicion ? "Editar Contrato" : "Crear Nuevo Contrato"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-0">
@@ -499,7 +483,7 @@ export default function Contracts() {
             {/* Campos adicionales opcionales */}
             <div className="border-top pt-3 mt-3">
               <h6 className="text-muted mb-3">Campos Adicionales (Opcionales)</h6>
-              
+
               <Row className="g-3">
                 <Col md={4}>
                   <Form.Group className="mb-3">
@@ -509,7 +493,7 @@ export default function Contracts() {
                         id="extension"
                         name="extension"
                         checked={form.extension || false}
-                        onChange={(e) => setForm({...form, extension: e.target.checked})}
+                        onChange={(e) => setForm({ ...form, extension: e.target.checked })}
                         label="Extensión"
                         className="form-check-lg"
                       />
@@ -527,7 +511,7 @@ export default function Contracts() {
                         id="addiction"
                         name="addiction"
                         checked={form.addiction || false}
-                        onChange={(e) => setForm({...form, addiction: e.target.checked})}
+                        onChange={(e) => setForm({ ...form, addiction: e.target.checked })}
                         label="Adición"
                         className="form-check-lg"
                       />
@@ -545,7 +529,7 @@ export default function Contracts() {
                         id="suspension"
                         name="suspension"
                         checked={form.suspension || false}
-                        onChange={(e) => setForm({...form, suspension: e.target.checked})}
+                        onChange={(e) => setForm({ ...form, suspension: e.target.checked })}
                         label="Suspensión"
                         className="form-check-lg"
                       />
@@ -569,11 +553,9 @@ export default function Contracts() {
             className="d-flex align-items-center"
           >
             <i
-              className={`bi ${
-                modoEdicion ? "bi-arrow-repeat" : "bi-save"
-              } me-2`}
-            ></i>
-            {modoEdicion ? "Actualizar" : "Guardar"}
+              className={`bi ${modoEdicion ? "bi-arrow-repeat" : "bi-save"
+                } me-2`}
+            ></i> {modoEdicion ? "Actualizar" : "Guardar"}
           </Button>
         </Modal.Footer>
       </Modal>

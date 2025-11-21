@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {

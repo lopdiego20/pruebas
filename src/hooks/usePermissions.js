@@ -63,12 +63,9 @@ export const usePermissions = () => {
  */
 export const useHasPermission = (action, resource) => {
   const permissions = usePermissions();
-  
-  if (!permissions || !permissions[`can${action.charAt(0).toUpperCase() + action.slice(1)}`]) {
-    return false;
-  }
-  
-  return permissions[`can${action.charAt(0).toUpperCase() + action.slice(1)}`][resource] || false;
+
+  const permissionGroup = permissions?.[`can${action.charAt(0).toUpperCase() + action.slice(1)}`];
+  return permissionGroup?.[resource] || false;
 };
 
 export default usePermissions;
