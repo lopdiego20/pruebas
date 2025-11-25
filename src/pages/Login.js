@@ -22,33 +22,35 @@ export default function Login() {
 
       const { token, user } = res.data;
       const role = user.role;
-       
+
 
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("user", JSON.stringify(user));
 
-      toast.success(`Bienvenido ${user.name || user.role} `,{
+      toast.success(`Bienvenido ${user.name || user.role}`, {
         id: loadingToast,
-        description:'Inicio de sesion exitoso'
-      })
+        description: 'Inicio de sesión exitoso'
+      });
 
 
       navigate('/dashboard');
     } catch (err) {
       const mensajeServidor =
         err.response?.data?.message || "Error desconocido del servidor";
-   
 
-      console.error("Error completo:", err);
-      toast.error(`Erro al inicia sesion`,{id: loadingToast,description:mensajeServidor})
+      // Error handling sin exponer detalles en consola
+      toast.error('Error al iniciar sesión', {
+        id: loadingToast,
+        description: mensajeServidor
+      });
     }
   };
 
   return (
     <div style={styles.pageContainer}>
 
-        
+
       <div style={styles.formContainer}>
         {/* Imagen a la izquierda */}
 

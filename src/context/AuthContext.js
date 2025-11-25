@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { BrowserRouter as Router } from 'react-router-dom';
 
 const AuthContext = createContext(null);
 
@@ -35,15 +34,3 @@ export const useAuth = () => {
     }
     return context;
 };
-
-function App() {
-    return (
-        <AuthProvider>
-            <Router>
-                {/* ...existing code... */}
-            </Router>
-        </AuthProvider>
-    );
-}
-
-export default App;
