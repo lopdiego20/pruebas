@@ -19,13 +19,13 @@ const GestionDocumental = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
-    
+
     if (!token) {
       toast.error('Sesión expirada');
       navigate('/');
       return;
     }
-    
+
     if (role && role.toLowerCase() !== 'admin') {
       toast.error('No tienes permisos para acceder a esta sección');
       navigate('/');
@@ -41,11 +41,14 @@ const GestionDocumental = () => {
       } else {
         setLoading(true);
       }
-      
-      const res = await api.get('/Documents');
-      
+
+      // Agregar parámetro para popular la información del contratista
+      const res = await api.get('/Documents?populate=contractor');
+
       if (res.data.success) {
         setDocumentos(res.data.data);
+        // Debug: ver qué datos trae
+        console.log('Documentos cargados:', res.data.data);
         if (isRefresh) {
           toast.success('Documentos actualizados correctamente');
         }
@@ -119,7 +122,7 @@ const GestionDocumental = () => {
   return (
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh" }}>
       <Header />
-      
+
       <div className="container-fluid py-4 px-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -132,8 +135,8 @@ const GestionDocumental = () => {
             </p>
           </div>
           <div className="d-flex gap-2">
-            <Button 
-              variant="outline-primary" 
+            <Button
+              variant="outline-primary"
               onClick={() => fetchDocumentos(true)}
               disabled={refreshing}
             >
@@ -179,6 +182,8 @@ const GestionDocumental = () => {
                   <thead className="bg-light">
                     <tr>
                       <th className="ps-4">Descripción</th>
+                      <th>Contratista</th>
+                      <th>Email</th>
                       <th>Estado</th>
                       <th>Retención</th>
                       <th>Versión</th>
@@ -194,6 +199,61 @@ const GestionDocumental = () => {
                           <td className="ps-4">
                             <div className="fw-semibold">{doc.description}</div>
                             <small className="text-muted">{doc.ip}</small>
+                          </td>
+                          <td>
+                            {/* Debug: mostrar toda la estructura */}
+                            {doc.userId ? (
+                              <div>
+                                <div className="fw-medium">
+                                  {doc.userId.firsName || doc.userId.firstName || 'N/A'} {doc.userId.lastName || 'N/A'}
+                                </div>
+                                <small className="text-muted">
+                                  {doc.userId.idcard || 'Sin cédula'}
+                                </small>
+                              </div>
+                            ) : doc.contractor?.user ? (
+                              <div>
+                                <div className="fw-medium">
+                                  {doc.contractor.user.firsName} {doc.contractor.user.lastName}
+                                </div>
+                                <small className="text-muted">
+                                  {doc.contractor.user.idcard || 'Sin cédula'}
+                                </small>
+                              </div>
+                            ) : doc.contractorId ? (
+                              <div className="text-warning">
+                                <small>ID: {doc.contractorId}</small>
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="text-muted fst-italic">Sin contratista</span>
+                                <br />
+                                <small className="text-danger">
+                                  Debug: {JSON.stringify(Object.keys(doc))}
+                                </small>
+                              </div>
+                            )}
+                          </td>
+                          <td>
+                            {doc.userId?.email ? (
+                              <a
+                                href={`mailto:${doc.userId.email}`}
+                                className="text-primary text-decoration-none"
+                              >
+                                <i className="bi bi-envelope me-1"></i>
+                                {doc.userId.email}
+                              </a>
+                            ) : doc.contractor?.user?.email ? (
+                              <a
+                                href={`mailto:${doc.contractor.user.email}`}
+                                className="text-primary text-decoration-none"
+                              >
+                                <i className="bi bi-envelope me-1"></i>
+                                {doc.contractor.user.email}
+                              </a>
+                            ) : (
+                              <span className="text-muted fst-italic">Sin email</span>
+                            )}
                           </td>
                           <td>{getStatusBadge(doc.state)}</td>
                           <td>
@@ -229,7 +289,7 @@ const GestionDocumental = () => {
                         </tr>
                         {expandedRow === doc._id && (
                           <tr>
-                            <td colSpan="7" className="p-0">
+                            <td colSpan="9" className="p-0">
                               <div className="p-4 bg-light border-top">
                                 <div className="mb-3">
                                   <h6 className="text-primary mb-3">
@@ -237,7 +297,7 @@ const GestionDocumental = () => {
                                     Documentos Disponibles ({countAvailableDocuments(doc)} de {documentFields.length})
                                   </h6>
                                 </div>
-                                
+
                                 {countAvailableDocuments(doc) === 0 ? (
                                   <div className="text-center py-3">
                                     <i className="bi bi-file-earmark-x text-muted" style={{ fontSize: '2rem' }}></i>

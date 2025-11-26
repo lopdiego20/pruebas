@@ -43,7 +43,7 @@ export default function User_Contract() {
   // Datos del formulario iniciales
   const [form, setForm] = useState({
     firsName: "",
-    lastname: "",
+    lastName: "",
     idcard: "",
     telephone: "",
     email: "",
@@ -81,19 +81,19 @@ export default function User_Contract() {
   // Obtener los contratos
   const obtenerContratos = async () => {
     try {
-      const res = await api.get(`/Contracts`);
+      const res = await api.get(`/Contracts?WithContractor=false`);
       setContratos(res.data.data);
     } catch (err) {
-      console.log("Error al cargar los contratos", error);
-      toast.error('Error al cargar los usaurio',{description:error?.response?.data?.message});
+      console.log("Error al cargar los contratos", err);
+      toast.error('Error al cargar los contratos', { description: err?.response?.data?.message || 'Error en el servidor' });
     }
   };
 
   // Renderizar el componente
   useEffect(() => {
-     obtenerContratos();
+    obtenerContratos();
     obtenerUsuarios();
-   
+
   }, []);
 
   // Capturar los campos del formulario cuando el usuario escriba
@@ -108,7 +108,7 @@ export default function User_Contract() {
       setMostrarModal(false);
       setForm({
         firsName: "",
-        lastname: "",
+        lastName: "",
         idcard: "",
         telephone: "",
         email: "",
@@ -171,16 +171,16 @@ export default function User_Contract() {
     try {
       const res = await api.delete(`/Users/${id}`);
       obtenerUsuarios();
-      toast.success('Usuario eliminado exitosamente',{description:res.data?.message} || 'Usuario eliminado')
+      toast.success('Usuario eliminado exitosamente', { description: res.data?.message } || 'Usuario eliminado')
     } catch (err) {
-      toast.error('No se puedo eliminar el usuairo',{description:err?.response?.data?.message || 'No se pudo eliminar el usuario'})
+      toast.error('No se puedo eliminar el usuairo', { description: err?.response?.data?.message || 'No se pudo eliminar el usuario' })
     }
   };
   // Abril modal para crear Uusario
   const abrirModalCrearUsuario = () => {
     setForm({
       firsName: "",
-      lastname: "",
+      lastName: "",
       idcard: "",
       telephone: "",
       email: "",
@@ -202,11 +202,12 @@ export default function User_Contract() {
   const abrirModalEditar = (user) => {
     setForm({
       firsName: user.user?.firsName || "",
-      lastname: user.user?.lastName || "",
+      lastName: user.user?.lastName || "",
       idcard: user.user?.idcard || "",
       telephone: user.user?.telephone || "",
       email: user.user?.email || "",
       password: "",
+      role: "contratista",
       post: user.user?.post || "",
       state: user.user?.state || true,
       contractId: user.contract?._id || "",
@@ -276,64 +277,63 @@ export default function User_Contract() {
                   </thead>
                   <tbody>
                     {usuariosC.map((contractor) => (
-                        <tr key={contractor._id} className="align-middle">
-                          <td className="ps-4 fw-medium">{contractor.user?.firsName || "-"}</td>
-                          <td>{contractor.user?.lastName || "-"}</td>
-                          <td>{contractor.user?.idcard || "-"}</td>
-                          <td>{contractor.user?.telephone || "-"}</td>
-                          <td>
-                            <a
-                              href={`mailto:${contractor.user?.email}`}
-                              className="text-primary"
-                            >
-                              {contractor.user?.email || "-"}
-                            </a>
-                          </td>
-                          <td>
-                            <span className="badge bg-secondary bg-opacity-10 text-secondary">
-                              {contractor.user?.role || "contratista"}
-                            </span>
-                          </td>
-                          <td>{contractor.user?.post || "-"}</td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                contractor.user?.state === true
-                                  ? "bg-success bg-opacity-10 text-success"
-                                  : "bg-danger bg-opacity-10 text-danger"
+                      <tr key={contractor._id} className="align-middle">
+                        <td className="ps-4 fw-medium">{contractor.user?.firsName || "-"}</td>
+                        <td>{contractor.user?.lastName || "-"}</td>
+                        <td>{contractor.user?.idcard || "-"}</td>
+                        <td>{contractor.user?.telephone || "-"}</td>
+                        <td>
+                          <a
+                            href={`mailto:${contractor.user?.email}`}
+                            className="text-primary"
+                          >
+                            {contractor.user?.email || "-"}
+                          </a>
+                        </td>
+                        <td>
+                          <span className="badge bg-secondary bg-opacity-10 text-secondary">
+                            {contractor.user?.role || "contratista"}
+                          </span>
+                        </td>
+                        <td>{contractor.user?.post || "-"}</td>
+                        <td>
+                          <span
+                            className={`badge ${contractor.user?.state === true
+                              ? "bg-success bg-opacity-10 text-success"
+                              : "bg-danger bg-opacity-10 text-danger"
                               }`}
-                            >
-                              {contractor.user?.state ? 'Activo' : 'Inactivo'}
-                            </span>
-                          </td>
-                          <td className="pe-4">
-                            <div className="d-flex justify-content-end gap-2">
-                              {permissions.canEdit.users && (
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => abrirModalEditar(contractor)}
-                                  className="d-flex align-items-center"
-                                >
-                                  <i className="bi bi-pencil-square me-1"></i>
-                                  Editar
-                                </Button>
-                              )}
-                              {permissions.canDelete.users && (
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() => eliminarUsuario(contractor.user?._id)}
-                                  className="d-flex align-items-center"
-                                >
-                                  <i className="bi bi-trash me-1"></i>
-                                  Eliminar
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                          >
+                            {contractor.user?.state ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td className="pe-4">
+                          <div className="d-flex justify-content-end gap-2">
+                            {permissions.canEdit.users && (
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                onClick={() => abrirModalEditar(contractor)}
+                                className="d-flex align-items-center"
+                              >
+                                <i className="bi bi-pencil-square me-1"></i>
+                                Editar
+                              </Button>
+                            )}
+                            {permissions.canDelete.users && (
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => eliminarUsuario(contractor.user?._id)}
+                                className="d-flex align-items-center"
+                              >
+                                <i className="bi bi-trash me-1"></i>
+                                Eliminar
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </Table>
               </div>
@@ -370,11 +370,11 @@ export default function User_Contract() {
                 </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Group controlId="lastname">
+                <Form.Group controlId="lastName">
                   <Form.Label>Apellido</Form.Label>
                   <Form.Control
-                    name="lastname"
-                    value={form.lastname}
+                    name="lastName"
+                    value={form.lastName}
                     onChange={handleChange}
                     required
                     placeholder="Ingrese el apellido"
@@ -442,9 +442,11 @@ export default function User_Contract() {
                     value={form.post}
                     onChange={handleChange}
                     placeholder="Ingrese el cargo"
+                    required
                   />
                 </Form.Group>
               </Col>
+
               <Col md={6}>
                 <Form.Group controlId="contractId">
                   <Form.Label>Contrato *</Form.Label>
@@ -457,11 +459,13 @@ export default function User_Contract() {
                     <option value="">Seleccione un contrato</option>
                     {contratos.map((contrato) => (
                       <option key={contrato._id} value={contrato._id}>
-                        {contrato.contractNumber ||
-                          `Contrato #${contrato._id.slice(-4)}`}
+                        {contrato.contractNumber || `Contrato #${contrato._id.slice(-4)}`}
                       </option>
                     ))}
                   </Form.Select>
+                  <Form.Text className="text-muted">
+                    Solo se muestran contratos sin vincular
+                  </Form.Text>
                 </Form.Group>
               </Col>
 
@@ -506,16 +510,39 @@ export default function User_Contract() {
               </Col>
 
               <Col md={6}>
+                <Form.Group controlId="role">
+                  <Form.Label>Rol</Form.Label>
+                  <Form.Control
+                    name="role"
+                    value="Contratista"
+                    disabled
+                    readOnly
+                    className="bg-light"
+                  />
+                  <Form.Text className="text-muted">
+                    El rol de contratista está predeterminado
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
                 <Form.Group controlId="state">
                   <Form.Label>Estado</Form.Label>
                   <Form.Select
                     name="state"
                     value={form.state}
-                    onChange={(e) => setForm({...form, state: e.target.value === 'true'})}
+                    onChange={(e) => setForm({ ...form, state: e.target.value === 'true' })}
+                    disabled={!modoEdicion}
+                    className={!modoEdicion ? "bg-light" : ""}
                   >
                     <option value={true}>Activo</option>
                     <option value={false}>Inactivo</option>
                   </Form.Select>
+                  {!modoEdicion && (
+                    <Form.Text className="text-muted">
+                      Los nuevos contratistas se crean como activos
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
             </Row>
@@ -531,9 +558,8 @@ export default function User_Contract() {
             className="d-flex align-items-center"
           >
             <i
-              className={`bi ${
-                modoEdicion ? "bi-arrow-repeat" : "bi-save"
-              } me-2`}
+              className={`bi ${modoEdicion ? "bi-arrow-repeat" : "bi-save"
+                } me-2`}
             ></i>
             {modoEdicion ? "Actualizar" : "Guardar"}
           </Button>

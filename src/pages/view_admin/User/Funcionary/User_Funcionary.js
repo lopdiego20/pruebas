@@ -39,7 +39,7 @@ export default function User_Funcionary() {
   // Datos del formulario iniciales
   const [form, setForm] = useState({
     firsName: "",
-    lastname: "",
+    lastName: "",
     idcard: "",
     telephone: "",
     email: "",
@@ -88,7 +88,7 @@ export default function User_Funcionary() {
       setMostrarModal(false);
       setForm({
         firsName: "",
-        lastname: "",
+        lastName: "",
         idcard: "",
         telephone: "",
         email: "",
@@ -120,10 +120,6 @@ export default function User_Funcionary() {
       if (!form.password) {
         delete datosActualizados.password;
       }
-
-      //   if(!form.contractId ){
-      //     delete datosActualizados.contractId;
-      //   }
 
       const res = await api.put(
         `/Users/${idEditando}`,
@@ -174,11 +170,12 @@ export default function User_Funcionary() {
   const abrirModalEditar = (funcionario) => {
     setForm({
       firsName: funcionario.user?.firsName || "",
-      lastname: funcionario.user?.lastName || "",
+      lastName: funcionario.user?.lastName || "",
       idcard: funcionario.user?.idcard || "",
       telephone: funcionario.user?.telephone || "",
       email: funcionario.user?.email || "",
       password: "",
+      role: "funcionario",
       post: funcionario.user?.post || "",
       state: funcionario.user?.state || true,
     });
@@ -191,13 +188,13 @@ export default function User_Funcionary() {
   const abrirModalCrearUsuario = () => {
     setForm({
       firsName: "",
-      lastname: "",
+      lastName: "",
       idcard: "",
       telephone: "",
       email: "",
       password: "",
       role: "funcionario",
-      post: "Funcionario",
+      post: "",
       state: true,
     });
     setModoEdicion(false);
@@ -263,64 +260,63 @@ export default function User_Funcionary() {
                   </thead>
                   <tbody>
                     {usuariosf.map((funcionario) => (
-                        <tr key={funcionario._id} className="align-middle">
-                          <td className="ps-4 fw-medium">{funcionario.user?.firsName || "-"}</td>
-                          <td>{funcionario.user?.lastName || "-"}</td>
-                          <td>{funcionario.user?.idcard || "-"}</td>
-                          <td>{funcionario.user?.telephone || "-"}</td>
-                          <td>
-                            <a
-                              href={`mailto:${funcionario.user?.email}`}
-                              className="text-primary"
-                            >
-                              {funcionario.user?.email || "-"}
-                            </a>
-                          </td>
-                          <td>
-                            <span className="badge bg-secondary bg-opacity-10 text-secondary">
-                              {funcionario.user?.role || "funcionario"}
-                            </span>
-                          </td>
-                          <td>{funcionario.user?.post || "-"}</td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                funcionario.user?.state === true
-                                  ? "bg-success bg-opacity-10 text-success"
-                                  : "bg-danger bg-opacity-10 text-danger"
+                      <tr key={funcionario._id} className="align-middle">
+                        <td className="ps-4 fw-medium">{funcionario.user?.firsName || "-"}</td>
+                        <td>{funcionario.user?.lastName || "-"}</td>
+                        <td>{funcionario.user?.idcard || "-"}</td>
+                        <td>{funcionario.user?.telephone || "-"}</td>
+                        <td>
+                          <a
+                            href={`mailto:${funcionario.user?.email}`}
+                            className="text-primary"
+                          >
+                            {funcionario.user?.email || "-"}
+                          </a>
+                        </td>
+                        <td>
+                          <span className="badge bg-secondary bg-opacity-10 text-secondary">
+                            {funcionario.user?.role || "funcionario"}
+                          </span>
+                        </td>
+                        <td>{funcionario.user?.post || "-"}</td>
+                        <td>
+                          <span
+                            className={`badge ${funcionario.user?.state === true
+                              ? "bg-success bg-opacity-10 text-success"
+                              : "bg-danger bg-opacity-10 text-danger"
                               }`}
-                            >
-                              {funcionario.user?.state ? 'Activo' : 'Inactivo'}
-                            </span>
-                          </td>
-                          <td className="pe-4">
-                            <div className="d-flex justify-content-end gap-2">
-                              {permissions.canEdit.users && (
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => abrirModalEditar(funcionario)}
-                                  className="d-flex align-items-center"
-                                >
-                                  <i className="bi bi-pencil-square me-1"></i>
-                                  Editar
-                                </Button>
-                              )}
-                              {permissions.canDelete.users && (
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() => eliminarUsuario(funcionario.user?._id)}
-                                  className="d-flex align-items-center"
-                                >
-                                  <i className="bi bi-trash me-1"></i>
-                                  Eliminar
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                          >
+                            {funcionario.user?.state ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td className="pe-4">
+                          <div className="d-flex justify-content-end gap-2">
+                            {permissions.canEdit.users && (
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                onClick={() => abrirModalEditar(funcionario)}
+                                className="d-flex align-items-center"
+                              >
+                                <i className="bi bi-pencil-square me-1"></i>
+                                Editar
+                              </Button>
+                            )}
+                            {permissions.canDelete.users && (
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => eliminarUsuario(funcionario.user?._id)}
+                                className="d-flex align-items-center"
+                              >
+                                <i className="bi bi-trash me-1"></i>
+                                Eliminar
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </Table>
               </div>
@@ -357,11 +353,11 @@ export default function User_Funcionary() {
                 </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Group controlId="lastname">
+                <Form.Group controlId="lastName">
                   <Form.Label>Apellido</Form.Label>
                   <Form.Control
-                    name="lastname"
-                    value={form.lastname}
+                    name="lastName"
+                    value={form.lastName}
                     onChange={handleChange}
                     required
                     placeholder="Ingrese el apellido"
@@ -429,7 +425,24 @@ export default function User_Funcionary() {
                     value={form.post}
                     onChange={handleChange}
                     placeholder="Ingrese el cargo"
+                    required
                   />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="role">
+                  <Form.Label>Rol</Form.Label>
+                  <Form.Control
+                    name="role"
+                    value="Funcionario"
+                    disabled
+                    readOnly
+                    className="bg-light"
+                  />
+                  <Form.Text className="text-muted">
+                    El rol de funcionario está predeterminado
+                  </Form.Text>
                 </Form.Group>
               </Col>
 
@@ -439,11 +452,18 @@ export default function User_Funcionary() {
                   <Form.Select
                     name="state"
                     value={form.state}
-                    onChange={(e) => setForm({...form, state: e.target.value === 'true'})}
+                    onChange={(e) => setForm({ ...form, state: e.target.value === 'true' })}
+                    disabled={!modoEdicion}
+                    className={!modoEdicion ? "bg-light" : ""}
                   >
                     <option value={true}>Activo</option>
                     <option value={false}>Inactivo</option>
                   </Form.Select>
+                  {!modoEdicion && (
+                    <Form.Text className="text-muted">
+                      Los nuevos funcionarios se crean como activos
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
             </Row>
@@ -459,9 +479,8 @@ export default function User_Funcionary() {
             className="d-flex align-items-center"
           >
             <i
-              className={`bi ${
-                modoEdicion ? "bi-arrow-repeat" : "bi-save"
-              } me-2`}
+              className={`bi ${modoEdicion ? "bi-arrow-repeat" : "bi-save"
+                } me-2`}
             ></i>
             {modoEdicion ? "Actualizar" : "Guardar"}
           </Button>

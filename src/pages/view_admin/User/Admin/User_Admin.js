@@ -30,13 +30,13 @@ export default function TablaUsuarios() {
 
   const [form, setForm] = useState({
     firsName: "",
-    lastname: "",
+    lastName: "",
     idcard: "",
     telephone: "",
     email: "",
     password: "",
     role: "admin",
-    post: "Administrador",
+    post: "",
     state: true,
   });
   // Obtener usuarios
@@ -76,13 +76,13 @@ export default function TablaUsuarios() {
       setMostrarModal(false);
       setForm({
         firsName: "",
-        lastname: "",
+        lastName: "",
         idcard: "",
         telephone: "",
         email: "",
         password: "",
         role: "admin",
-        post: "Administrador",
+        post: "",
         state: true,
       });
       obtenerUsuarios();
@@ -101,13 +101,13 @@ export default function TablaUsuarios() {
   const abrirModalCrearUsuario = () => {
     setForm({
       firsName: "",
-      lastname: "",
+      lastName: "",
       idcard: "",
       telephone: "",
       email: "",
       password: "",
       role: "admin",
-      post: "Administrador",
+      post: "",
       state: true,
     });
     setModoEdicion(false);
@@ -119,7 +119,7 @@ export default function TablaUsuarios() {
   const abrirModalEditar = (user) => {
     setForm({
       firsName: user.firsName,
-      lastname: user.lastName,
+      lastName: user.lastName,
       idcard: user.idcard,
       telephone: user.telephone,
       email: user.email,
@@ -267,11 +267,10 @@ export default function TablaUsuarios() {
                           <td>{user.post || "-"}</td>
                           <td>
                             <span
-                              className={`badge ${
-                                user.state === true
-                                  ? "bg-success bg-opacity-10 text-success"
-                                  : "bg-danger bg-opacity-10 text-danger"
-                              }`}
+                              className={`badge ${user.state === true
+                                ? "bg-success bg-opacity-10 text-success"
+                                : "bg-danger bg-opacity-10 text-danger"
+                                }`}
                             >
                               {user.state ? 'Activo' : 'Inactivo'}
                             </span>
@@ -342,11 +341,11 @@ export default function TablaUsuarios() {
                 </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Group controlId="lastname">
+                <Form.Group controlId="lastName">
                   <Form.Label>Apellido</Form.Label>
                   <Form.Control
-                    name="lastname"
-                    value={form.lastname}
+                    name="lastName"
+                    value={form.lastName}
                     onChange={handleChange}
                     required
                     placeholder="Ingrese el apellido"
@@ -419,16 +418,34 @@ export default function TablaUsuarios() {
               </Col>
 
               <Col md={3}>
+                <Form.Group controlId="role">
+                  <Form.Label>Rol</Form.Label>
+                  <Form.Control
+                    name="role"
+                    value={form.role}
+                    disabled
+                    readOnly
+                    className="bg-light"
+                  />
+                  <Form.Text className="text-muted">
+                    Rol predeterminado para administradores
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+
+              <Col md={3}>
                 <Form.Group controlId="state">
                   <Form.Label>Estado</Form.Label>
-                  <Form.Select
+                  <Form.Control
                     name="state"
-                    value={form.state}
-                    onChange={(e) => setForm({...form, state: e.target.value === 'true'})}
-                  >
-                    <option value={true}>Activo</option>
-                    <option value={false}>Inactivo</option>
-                  </Form.Select>
+                    value={form.state ? 'Activo' : 'Inactivo'}
+                    disabled
+                    readOnly
+                    className="bg-light"
+                  />
+                  <Form.Text className="text-muted">
+                    Estado predeterminado
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>
@@ -444,9 +461,8 @@ export default function TablaUsuarios() {
             className="d-flex align-items-center"
           >
             <i
-              className={`bi ${
-                modoEdicion ? "bi-arrow-repeat" : "bi-save"
-              } me-2`}
+              className={`bi ${modoEdicion ? "bi-arrow-repeat" : "bi-save"
+                } me-2`}
             ></i>
             {modoEdicion ? "Actualizar" : "Guardar"}
           </Button>

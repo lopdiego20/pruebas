@@ -153,6 +153,7 @@ const DashboardData = () => {
 
   const [dataList, setDataList] = useState([]);
   const [documentos, setDocumentos] = useState([]);
+  const [usuarios, setUsuarios] = useState([]); // Lista de contratistas
   const [showModal, setShowModal] = useState(false);
   const [selectedDocId, setSelectedDocId] = useState('');
   const [detalleVisible, setDetalleVisible] = useState(null);
@@ -164,7 +165,7 @@ const DashboardData = () => {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        await Promise.all([fetchDocumentos(), fetchData()]);
+        await Promise.all([fetchDocumentos(), fetchData(), fetchUsuarios()]);
       } catch (error) {
         console.error('Error al cargar datos iniciales:', error);
       } finally {
@@ -178,7 +179,7 @@ const DashboardData = () => {
   const refreshData = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([fetchDocumentos(), fetchData()]);
+      await Promise.all([fetchDocumentos(), fetchData(), fetchUsuarios()]);
       toast.success('Datos actualizados correctamente');
     } catch (error) {
       console.error('Error al actualizar datos:', error);
@@ -211,6 +212,20 @@ const DashboardData = () => {
     } catch (error) {
       console.error('Error al obtener documentos:', error);
       toast.error('Error al cargar los documentos', {
+        description: error.response?.data?.message || 'Error en el servidor'
+      });
+    }
+  };
+
+  const fetchUsuarios = async () => {
+    try {
+      const res = await api.get('/Users/Contractor?state=true');
+      if (res.data.success) {
+        setUsuarios(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error al obtener contratistas:', error);
+      toast.error('Error al cargar contratistas', {
         description: error.response?.data?.message || 'Error en el servidor'
       });
     }
@@ -426,9 +441,14 @@ const DashboardData = () => {
 
             {/* Lista de análisis agrupados */}
             {Object.entries(agruparPorDocumento()).map(([contractorId, analisis]) => {
-              // Buscar información del contractor
-              // Tomar el primer análisis para obtener info del contractor
-              const contractorName = `Contractor ${contractorId.slice(-8)}`; // Mostrar últimos 8 chars del ID
+              // Buscar el contratista en la lista de usuarios
+              const contractor = usuarios.find((c) => c._id === contractorId);
+              const user = contractor?.user;
+
+              // Generar nombre para mostrar
+              const contractorName = user
+                ? `${user.firstName || user.firsName || ''} ${user.lastName || ''}`.trim() || `Contractor ${contractorId.slice(-8)}`
+                : `Contractor ${contractorId.slice(-8)}`;
 
               return (
                 <Card key={contractorId} className="mb-4 shadow-sm border-0">
@@ -437,6 +457,11 @@ const DashboardData = () => {
                       <h5 className="fw-bold mb-0">
                         <i className="bi bi-person-badge text-primary me-2"></i>
                         {contractorName}
+                        {user?.email && (
+                          <small className="text-muted ms-2 fw-normal" style={{ fontSize: '0.75rem' }}>
+                            ({user.email})
+                          </small>
+                        )}
                         <Badge bg="light" text="primary" className="ms-2">
                           {analisis.length} análisis disponibles
                         </Badge>
