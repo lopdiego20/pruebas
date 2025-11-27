@@ -11,8 +11,8 @@ const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, actualiza
   // Solo mostrar si el campo existe y tiene datos reales
   if (!item[field]?.description || item[field].description.includes('prueba') || item[field].description.includes('test')) return null;
 
-  // Obtener el managementId del primer subesquema que tenga documentManagement
-  const managementId = item[field]?.documentManagement || item.documentManagement;
+  // Obtener el documentManagementId del campo específico o del item principal
+  const documentManagementId = item[field]?.documentManagement || item.documentManagement;
   const isVisible = detalleVisible === `${item._id}-${field}`;
 
   return (
@@ -45,12 +45,12 @@ const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, actualiza
               {isVisible ? 'Ocultar' : 'Ver'}
             </Button>
 
-            {managementId && (
+            {documentManagementId && (
               <>
                 <Button
                   size="sm"
                   variant="outline-warning"
-                  onClick={() => actualizarDocumento(managementId, field)}
+                  onClick={() => actualizarDocumento(documentManagementId, field)}
                   title="Actualizar documento"
                 >
                   <i className="bi bi-arrow-clockwise"></i>
@@ -59,7 +59,7 @@ const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, actualiza
                 <Button
                   size="sm"
                   variant={item[field].status ? 'outline-secondary' : 'outline-success'}
-                  onClick={() => toggleEstadoDocumento(managementId, field)}
+                  onClick={() => toggleEstadoDocumento(documentManagementId, field)}
                   title={item[field].status ? 'Marcar como pendiente' : 'Marcar como aprobado'}
                 >
                   <i className={`bi bi-${item[field].status ? 'pause-circle' : 'check-circle'}`}></i>
@@ -156,6 +156,8 @@ const DashboardData = () => {
   const [usuarios, setUsuarios] = useState([]); // Lista de contratistas
   const [showModal, setShowModal] = useState(false);
   const [selectedDocId, setSelectedDocId] = useState('');
+  const [selectedContractorId, setSelectedContractorId] = useState(''); // Contratista seleccionado para el modal
+  const [selectedFilterContractorId, setSelectedFilterContractorId] = useState(''); // Contratista seleccionado para filtrar la vista
   const [detalleVisible, setDetalleVisible] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -239,6 +241,11 @@ const DashboardData = () => {
       return;
     }
 
+    if (!selectedContractorId) {
+      toast.error('Por favor selecciona un contratista');
+      return;
+    }
+
     setAnalyzing(true);
     let loadingToast;
     try {
@@ -246,7 +253,9 @@ const DashboardData = () => {
         description: 'Este proceso puede tomar varios minutos'
       });
 
-      await api.post(`/Data/${selectedDocId}`);
+      await api.post(`/Data/${selectedDocId}`, {
+        contractorId: selectedContractorId
+      });
 
       toast.success('Análisis ejecutado con éxito', {
         id: loadingToast,
@@ -257,6 +266,7 @@ const DashboardData = () => {
       await fetchData();
       setShowModal(false);
       setSelectedDocId('');
+      setSelectedContractorId('');
     } catch (error) {
       console.error('Error al ejecutar análisis:', error);
 
@@ -368,6 +378,24 @@ const DashboardData = () => {
     XLSX.writeFile(wb, `todas_comparaciones.xlsx`);
   };
 
+  // Obtener los contratistas que tienen análisis
+  const contractorsWithData = Object.keys(agruparPorDocumento());
+
+  // Filtrar los datos agrupados según el contratista seleccionado
+  const getFilteredData = () => {
+    const grouped = agruparPorDocumento();
+
+    if (!selectedFilterContractorId) {
+      // Si no hay filtro, no mostrar nada
+      return {};
+    }
+
+    // Mostrar solo el contratista seleccionado
+    return {
+      [selectedFilterContractorId]: grouped[selectedFilterContractorId] || []
+    };
+  };
+
   return (
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh" }}>
       <Header />
@@ -414,108 +442,152 @@ const DashboardData = () => {
           </Card>
         ) : (
           <>
-            {/* Panel de información */}
+            {/* Panel de información y filtro */}
             <Card className="mb-4 shadow-sm border-0">
               <Card.Body className="bg-light">
                 <div className="row align-items-center">
-                  <div className="col-md-8">
+                  <div className="col-md-6">
                     <h6 className="fw-bold text-primary mb-2">
                       <i className="bi bi-info-circle me-2"></i>
                       Gestión de Análisis de Documentos
                     </h6>
                     <p className="mb-0 text-muted small">
-                      Aquí puedes ver todos los análisis realizados, actualizar documentos específicos y cambiar estados.
+                      Selecciona un contratista para ver sus análisis de documentos.
                     </p>
                   </div>
-                  <div className="col-md-4 text-md-end">
-                    <Badge bg="info" className="me-2">
-                      {dataList.length} análisis totales
-                    </Badge>
-                    <Badge bg="secondary">
-                      {Object.keys(agruparPorDocumento()).length} contractors
-                    </Badge>
+                  <div className="col-md-6">
+                    <Form.Group>
+                      <Form.Label className="fw-semibold mb-2">
+                        <i className="bi bi-person-badge text-primary me-2"></i>
+                        Seleccionar Contratista
+                      </Form.Label>
+                      <Form.Select
+                        value={selectedFilterContractorId}
+                        onChange={(e) => setSelectedFilterContractorId(e.target.value)}
+                        className="py-2"
+                      >
+                        <option value="">Seleccione un contratista para ver sus análisis...</option>
+                        {contractorsWithData.map((contractorId) => {
+                          const contractor = usuarios.find((c) => c._id === contractorId);
+                          const user = contractor?.user;
+                          const displayName = user
+                            ? `${user.firstName || user.firsName || ''} ${user.lastName || ''}`.trim() || user.email
+                            : `Contractor ${contractorId.slice(-8)}`;
+
+                          return (
+                            <option key={contractorId} value={contractorId}>
+                              {displayName} {user?.email && `(${user.email})`}
+                            </option>
+                          );
+                        })}
+                      </Form.Select>
+                    </Form.Group>
                   </div>
                 </div>
+
+                {selectedFilterContractorId && (
+                  <div className="mt-3 pt-3 border-top">
+                    <div className="d-flex gap-2 align-items-center">
+                      <Badge bg="info">
+                        {getFilteredData()[selectedFilterContractorId]?.length || 0} análisis
+                      </Badge>
+                      <Badge bg="secondary">
+                        {contractorsWithData.length} contratistas totales
+                      </Badge>
+                    </div>
+                  </div>
+                )}
               </Card.Body>
             </Card>
 
-            {/* Lista de análisis agrupados */}
-            {Object.entries(agruparPorDocumento()).map(([contractorId, analisis]) => {
-              // Buscar el contratista en la lista de usuarios
-              const contractor = usuarios.find((c) => c._id === contractorId);
-              const user = contractor?.user;
+            {/* Mensaje cuando no hay contratista seleccionado */}
+            {!selectedFilterContractorId ? (
+              <Card className="text-center py-5 shadow-sm border-0">
+                <Card.Body>
+                  <i className="bi bi-person-badge text-muted" style={{ fontSize: '3rem' }}></i>
+                  <h5 className="mt-3 text-muted">Selecciona un contratista</h5>
+                  <p className="text-muted">Usa el selector de arriba para ver los análisis de un contratista específico</p>
+                </Card.Body>
+              </Card>
+            ) : (
+              /* Lista de análisis del contratista seleccionado */
+              Object.entries(getFilteredData()).map(([contractorId, analisis]) => {
+                // Buscar el contratista en la lista de usuarios
+                const contractor = usuarios.find((c) => c._id === contractorId);
+                const user = contractor?.user;
 
-              // Generar nombre para mostrar
-              const contractorName = user
-                ? `${user.firstName || user.firsName || ''} ${user.lastName || ''}`.trim() || `Contractor ${contractorId.slice(-8)}`
-                : `Contractor ${contractorId.slice(-8)}`;
+                // Generar nombre para mostrar
+                const contractorName = user
+                  ? `${user.firstName || user.firsName || ''} ${user.lastName || ''}`.trim() || `Contractor ${contractorId.slice(-8)}`
+                  : `Contractor ${contractorId.slice(-8)}`;
 
-              return (
-                <Card key={contractorId} className="mb-4 shadow-sm border-0">
-                  <Card.Header className="bg-white border-0">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <h5 className="fw-bold mb-0">
-                        <i className="bi bi-person-badge text-primary me-2"></i>
-                        {contractorName}
-                        {user?.email && (
-                          <small className="text-muted ms-2 fw-normal" style={{ fontSize: '0.75rem' }}>
-                            ({user.email})
-                          </small>
-                        )}
-                        <Badge bg="light" text="primary" className="ms-2">
-                          {analisis.length} análisis disponibles
-                        </Badge>
-                      </h5>
-                      <div>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          onClick={() => exportarExcel(analisis, contractorName)}
-                        >
-                          <i className="bi bi-file-excel me-1"></i>Excel
-                        </Button>
+                return (
+                  <Card key={contractorId} className="mb-4 shadow-sm border-0">
+                    <Card.Header className="bg-white border-0">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <h5 className="fw-bold mb-0">
+                          <i className="bi bi-person-badge text-primary me-2"></i>
+                          {contractorName}
+                          {user?.email && (
+                            <small className="text-muted ms-2 fw-normal" style={{ fontSize: '0.75rem' }}>
+                              ({user.email})
+                            </small>
+                          )}
+                          <Badge bg="light" text="primary" className="ms-2">
+                            {analisis.length} análisis disponibles
+                          </Badge>
+                        </h5>
+                        <div>
+                          <Button
+                            variant="outline-success"
+                            size="sm"
+                            onClick={() => exportarExcel(analisis, contractorName)}
+                          >
+                            <i className="bi bi-file-excel me-1"></i>Excel
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </Card.Header>
-                  <Card.Body className="p-0">
-                    <div className="table-responsive">
-                      <Table hover className="mb-0">
-                        <thead className="bg-light">
-                          <tr>
-                            <th style={{ width: '25%' }}>Documento</th>
-                            <th style={{ width: '15%' }}>Estado</th>
-                            <th style={{ width: '30%' }}>Descripción</th>
-                            <th style={{ width: '30%' }}>Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {analisis.map((item) => {
-                            // Mostrar cada campo del análisis
-                            const documentFields = [
-                              'certificateOfCompliance', 'signedCertificateOfCompliance',
-                              'activityReport', 'taxQualityCertificate', 'socialSecurity', 'rut', 'rit',
-                              'trainings', 'initiationRecord', 'accountCertification'
-                            ];
+                    </Card.Header>
+                    <Card.Body className="p-0">
+                      <div className="table-responsive">
+                        <Table hover className="mb-0">
+                          <thead className="bg-light">
+                            <tr>
+                              <th style={{ width: '25%' }}>Documento</th>
+                              <th style={{ width: '15%' }}>Estado</th>
+                              <th style={{ width: '30%' }}>Descripción</th>
+                              <th style={{ width: '30%' }}>Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {analisis.map((item) => {
+                              // Mostrar cada campo del análisis
+                              const documentFields = [
+                                'certificateOfCompliance', 'signedCertificateOfCompliance',
+                                'activityReport', 'taxQualityCertificate', 'socialSecurity', 'rut', 'rit',
+                                'trainings', 'initiationRecord', 'accountCertification'
+                              ];
 
-                            return documentFields.map(field => (
-                              <DocumentRow
-                                key={`${item._id}-${field}`}
-                                item={item}
-                                field={field}
-                                detalleVisible={detalleVisible}
-                                setDetalleVisible={setDetalleVisible}
-                                actualizarDocumento={actualizarDocumento}
-                                toggleEstadoDocumento={toggleEstadoDocumento}
-                              />
-                            ));
-                          })}
-                        </tbody>
-                      </Table>
-                    </div>
-                  </Card.Body>
-                </Card>
-              );
-            })}
+                              return documentFields.map(field => (
+                                <DocumentRow
+                                  key={`${item._id}-${field}`}
+                                  item={item}
+                                  field={field}
+                                  detalleVisible={detalleVisible}
+                                  setDetalleVisible={setDetalleVisible}
+                                  actualizarDocumento={actualizarDocumento}
+                                  toggleEstadoDocumento={toggleEstadoDocumento}
+                                />
+                              ));
+                            })}
+                          </tbody>
+                        </Table>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                );
+              })
+            )}
           </>
         )}
       </div>
@@ -541,13 +613,50 @@ const DashboardData = () => {
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
+            {/* Select de Contratista */}
             <Form.Group className="mb-4">
-              <Form.Label className="fw-semibold">Seleccionar Gestión Documental *</Form.Label>
+              <Form.Label className="fw-semibold">
+                <i className="bi bi-person-badge text-primary me-2"></i>
+                Seleccionar Contratista *
+              </Form.Label>
+              <Form.Select
+                value={selectedContractorId}
+                onChange={(e) => setSelectedContractorId(e.target.value)}
+                required
+                className="py-2"
+                disabled={analyzing}
+              >
+                <option value="">Seleccione un contratista...</option>
+                {usuarios.map((contractor) => {
+                  const user = contractor.user;
+                  const displayName = user
+                    ? `${user.firstName || user.firsName || ''} ${user.lastName || ''}`.trim() || user.email
+                    : `Contractor ${contractor._id.slice(-8)}`;
+
+                  return (
+                    <option key={contractor._id} value={contractor._id}>
+                      {displayName} {user?.email && `(${user.email})`}
+                    </option>
+                  );
+                })}
+              </Form.Select>
+              <Form.Text className="text-muted">
+                Seleccione el contratista al cual está asociado el contrato que desea analizar.
+              </Form.Text>
+            </Form.Group>
+
+            {/* Select de Gestión Documental */}
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-semibold">
+                <i className="bi bi-file-earmark-text text-primary me-2"></i>
+                Seleccionar Gestión Documental *
+              </Form.Label>
               <Form.Select
                 value={selectedDocId}
                 onChange={(e) => setSelectedDocId(e.target.value)}
                 required
                 className="py-2"
+                disabled={analyzing}
               >
                 <option value="">Seleccione una gestión documental...</option>
                 {documentos.map((doc) => (
@@ -565,7 +674,7 @@ const DashboardData = () => {
               <i className="bi bi-info-circle me-2"></i>
               <strong>Proceso de Análisis:</strong>
               <ul className="mb-0 mt-2">
-                <li>Se analizarán todos los documentos PDF asociados</li>
+                <li>Se analizarán todos los documentos PDF asociados al contratista</li>
                 <li>Se compararán con los datos del contrato</li>
                 <li>El proceso puede tomar varios minutos</li>
               </ul>
@@ -574,7 +683,11 @@ const DashboardData = () => {
             <div className="d-flex justify-content-end gap-2">
               <Button
                 variant="light"
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedDocId('');
+                  setSelectedContractorId('');
+                }}
                 disabled={analyzing}
               >
                 Cancelar

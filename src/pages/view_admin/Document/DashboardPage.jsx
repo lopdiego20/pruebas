@@ -37,13 +37,13 @@ const DashboardDocumentos = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
-    
+
     if (!token) {
       toast.error('Sesión expirada');
       navigate('/');
       return;
     }
-    
+
     if (role && !['admin', 'funcionario'].includes(role.toLowerCase())) {
       toast.error('No tienes permisos para acceder a esta sección');
       navigate('/');
@@ -52,16 +52,16 @@ const DashboardDocumentos = () => {
   }, [navigate]);
 
   const fetchData = async () => {
-      try {
-        setLoading(true);
-        await Promise.all([fetchDocumentos(), fetchUsuarios()]);
-      } catch (error) {
-        console.error('Error al cargar datos:', error);
-        toast.error('Error al cargar los datos iniciales');
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      setLoading(true);
+      await Promise.all([fetchDocumentos(), fetchUsuarios()]);
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+      toast.error('Error al cargar los datos iniciales');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Función para refrescar datos
   const refreshData = async () => {
@@ -83,7 +83,7 @@ const DashboardDocumentos = () => {
   const fetchDocumentos = async () => {
     try {
       const res = await api.get('/Documents');
-      
+
       if (res.data.success) {
         setDocumentos(res.data.data);
         console.log('Documentos cargados:', res.data.data);
@@ -103,7 +103,7 @@ const DashboardDocumentos = () => {
   const fetchUsuarios = async () => {
     try {
       const res = await api.get('/Users/Contractor?state=true');
-      
+
       if (res.data.success) {
         setUsuarios(res.data.data);
         console.log('Contractors cargados:', res.data.data);
@@ -125,7 +125,7 @@ const DashboardDocumentos = () => {
     console.log('documento completo:', documento);
     console.log('documento.userContract:', documento.userContract);
     console.log('typeof documento.userContract:', typeof documento.userContract);
-    
+
     if (!window.confirm('¿Estás seguro de eliminar toda esta gestión documental? Esta acción eliminará todos los documentos asociados.')) return;
 
     try {
@@ -138,16 +138,16 @@ const DashboardDocumentos = () => {
       } else {
         contractId = documento.userContract;
       }
-      
+
       console.log('contractId final a enviar:', contractId);
       console.log('URL final:', `/Documents/${contractId}`);
 
       await api.delete(`/Documents/${contractId}`);
-      
+
       toast.success('Gestión documental eliminada exitosamente', {
         id: loadingToast
       });
-      
+
       // Recargar la lista de documentos
       fetchDocumentos();
     } catch (error) {
@@ -169,11 +169,11 @@ const DashboardDocumentos = () => {
       const contractId = typeof userContract === 'object' ? userContract._id || userContract.id : userContract;
 
       await api.delete(`/Documents/${contractId}/document/${tipoDocumento}`);
-      
+
       toast.success('Documento específico eliminado exitosamente', {
         id: loadingToast
       });
-      
+
       // Recargar la lista de documentos
       fetchDocumentos();
     } catch (error) {
@@ -194,14 +194,14 @@ const DashboardDocumentos = () => {
 
   const abrirModalCrear = () => {
     setModoEdicion(false);
-    setFormData({ 
-      description: '', 
-      state: 'Activo', 
-      retention_time: '5', 
-      version: 1, 
-      ip: window.location.hostname, 
-      user_contrac: '', 
-      _id_gestion: '' 
+    setFormData({
+      description: '',
+      state: 'Activo',
+      retention_time: '5',
+      version: 1,
+      ip: window.location.hostname,
+      user_contrac: '',
+      _id_gestion: ''
     });
     setFiles({});
     setShowModal(true);
@@ -215,9 +215,9 @@ const DashboardDocumentos = () => {
 
   const abrirModalEditar = (doc) => {
     setModoEdicion(true);
-    setFormData({ 
-      ...doc, 
-      version: doc.version + 1, 
+    setFormData({
+      ...doc,
+      version: doc.version + 1,
       _id_gestion: doc._id,
       user_contrac: doc.userContract // Corregir el nombre del campo
     });
@@ -227,7 +227,7 @@ const DashboardDocumentos = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.user_contrac) {
       toast.error('Por favor selecciona un usuario contratista');
       return;
@@ -241,7 +241,7 @@ const DashboardDocumentos = () => {
     form.append('state', formData.state === 'Activo' ? true : false);
     form.append('retentionTime', formData.retention_time || '5');
     form.append('ip', window.location.hostname);
-    
+
     if (modoEdicion) {
       form.append('_id_gestion', formData._id_gestion);
     }
@@ -249,7 +249,7 @@ const DashboardDocumentos = () => {
     // Archivos requeridos según el backend
     const fileFields = [
       'filingLetter',
-      'certificateOfCompliance', 
+      'certificateOfCompliance',
       'signedCertificateOfCompliance',
       'activityReport',
       'taxQualityCertificate',
@@ -260,7 +260,7 @@ const DashboardDocumentos = () => {
       'initiationRecord',
       'accountCertification',
     ];
-    
+
     // Mapear nombres del frontend al backend
     const fieldMapping = {
       'filing_letter': 'filingLetter',
@@ -301,7 +301,7 @@ const DashboardDocumentos = () => {
 
     try {
       const loadingToast = toast.loading(modoEdicion ? 'Actualizando documento...' : 'Creando documento...');
-      
+
       let response;
       if (modoEdicion) {
         response = await api.put(`/Documents/${user_contract}`, form, {
@@ -317,19 +317,19 @@ const DashboardDocumentos = () => {
         toast.success(modoEdicion ? 'Documento actualizado exitosamente' : 'Documento creado exitosamente', {
           id: loadingToast
         });
-        
+
         setShowModal(false);
         setFormData({
-          description: '', 
-          state: 'Activo', 
-          retention_time: '5', 
-          version: 1, 
-          ip: window.location.hostname, 
-          user_contrac: '', 
-          _id_gestion: '' 
+          description: '',
+          state: 'Activo',
+          retention_time: '5',
+          version: 1,
+          ip: window.location.hostname,
+          user_contrac: '',
+          _id_gestion: ''
         });
         setFiles({});
-        
+
         // Recargar datos
         fetchDocumentos();
       } else {
@@ -362,7 +362,7 @@ const DashboardDocumentos = () => {
   return (
     <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh" }}>
       <Header />
-      
+
       <div className="container-fluid py-4 px-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -375,8 +375,8 @@ const DashboardDocumentos = () => {
             </p>
           </div>
           <div className="d-flex gap-2">
-            <Button 
-              variant="outline-primary" 
+            <Button
+              variant="outline-primary"
               onClick={refreshData}
               disabled={refreshing}
             >
@@ -431,9 +431,26 @@ const DashboardDocumentos = () => {
                   </thead>
                   <tbody>
                     {documentos.map((doc) => {
-                      // Encontrar contractor usando userContract
-                      const contractor = usuarios.find((c) => c._id === doc.userContract);
-                      const user = contractor?.user;
+                      // Encontrar contractor y user
+                      let contractor = null;
+                      let user = null;
+
+                      // Si userContract es un objeto (ya viene poblado del backend)
+                      if (doc.userContract && typeof doc.userContract === 'object') {
+                        contractor = doc.userContract;
+                        user = contractor.user;
+                      }
+                      // Si userContract es un ID (string), buscar en la lista de usuarios
+                      else if (doc.userContract && typeof doc.userContract === 'string') {
+                        contractor = usuarios.find((c) => c._id === doc.userContract);
+                        user = contractor?.user;
+                      }
+                      // Intentar con contractorId si existe
+                      else if (doc.contractorId) {
+                        contractor = usuarios.find((c) => c._id === doc.contractorId);
+                        user = contractor?.user;
+                      }
+
                       return (
                         <React.Fragment key={doc._id}>
                           <tr>
@@ -517,10 +534,10 @@ const DashboardDocumentos = () => {
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label className="fw-semibold">Usuario Contratista *</Form.Label>
-              <Form.Select 
-                name="user_contrac" 
-                value={formData.user_contrac} 
-                onChange={handleInputChange} 
+              <Form.Select
+                name="user_contrac"
+                value={formData.user_contrac}
+                onChange={handleInputChange}
                 required
                 className="py-2"
               >
@@ -549,9 +566,9 @@ const DashboardDocumentos = () => {
               <div className="col-md-6">
                 <Form.Group className="mb-3">
                   <Form.Label className="fw-semibold">Estado *</Form.Label>
-                  <Form.Select 
-                    name="state" 
-                    value={formData.state} 
+                  <Form.Select
+                    name="state"
+                    value={formData.state}
                     onChange={handleInputChange}
                     className="py-2"
                     required
@@ -601,10 +618,10 @@ const DashboardDocumentos = () => {
                             {field.label}
                             {!modoEdicion && <span className="text-danger"> *</span>}
                           </Form.Label>
-                          <Form.Control 
-                            type="file" 
-                            name={field.name} 
-                            onChange={handleFileChange} 
+                          <Form.Control
+                            type="file"
+                            name={field.name}
+                            onChange={handleFileChange}
                             className="py-2"
                             accept=".pdf"
                             required={!modoEdicion}
@@ -646,7 +663,7 @@ const DashboardDocumentos = () => {
             <i className="bi bi-exclamation-triangle me-2"></i>
             <strong>Atención:</strong> Esta acción eliminará únicamente el documento seleccionado, no toda la gestión documental.
           </div>
-          
+
           {selectedDocument && (
             <Card className="mb-3 bg-light border-0">
               <Card.Body className="py-2">
@@ -672,8 +689,8 @@ const DashboardDocumentos = () => {
 
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold">Seleccionar documento a eliminar *</Form.Label>
-            <Form.Select 
-              value={selectedDocumentType} 
+            <Form.Select
+              value={selectedDocumentType}
               onChange={(e) => setSelectedDocumentType(e.target.value)}
               required
             >
@@ -696,8 +713,8 @@ const DashboardDocumentos = () => {
             <Button variant="light" onClick={() => setShowDeleteModal(false)}>
               Cancelar
             </Button>
-            <Button 
-              variant="warning" 
+            <Button
+              variant="warning"
               onClick={() => {
                 if (selectedDocumentType) {
                   eliminarDocumentoEspecifico(selectedDocument.userContract, selectedDocumentType);
