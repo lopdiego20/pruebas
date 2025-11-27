@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
 import Header from '../../../components/Header/Header';
 import api from '../../../services/api';
 
-const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, actualizarDocumento, toggleEstadoDocumento }) => {
+const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, toggleEstadoDocumento }) => {
   // Solo mostrar si el campo existe y tiene datos reales
   if (!item[field]?.description || item[field].description.includes('prueba') || item[field].description.includes('test')) return null;
 
@@ -28,11 +28,6 @@ const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, actualiza
           </Badge>
         </td>
         <td>
-          <span className="text-muted">
-            {item[field].description || 'Sin descripción'}
-          </span>
-        </td>
-        <td>
           <div className="d-flex gap-1 flex-wrap">
             <Button
               size="sm"
@@ -46,35 +41,24 @@ const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, actualiza
             </Button>
 
             {documentManagementId && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline-warning"
-                  onClick={() => actualizarDocumento(documentManagementId, field)}
-                  title="Actualizar documento"
-                >
-                  <i className="bi bi-arrow-clockwise"></i>
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant={item[field].status ? 'outline-secondary' : 'outline-success'}
-                  onClick={() => toggleEstadoDocumento(documentManagementId, field)}
-                  title={item[field].status ? 'Marcar como pendiente' : 'Marcar como aprobado'}
-                >
-                  <i className={`bi bi-${item[field].status ? 'pause-circle' : 'check-circle'}`}></i>
-                  <span className="ms-1 d-none d-md-inline">
-                    {item[field].status ? 'Pendiente' : 'Aprobar'}
-                  </span>
-                </Button>
-              </>
+              <Button
+                size="sm"
+                variant={item[field].status ? 'outline-secondary' : 'outline-success'}
+                onClick={() => toggleEstadoDocumento(documentManagementId, field)}
+                title={item[field].status ? 'Marcar como pendiente' : 'Marcar como aprobado'}
+              >
+                <i className={`bi bi-${item[field].status ? 'pause-circle' : 'check-circle'}`}></i>
+                <span className="ms-1 d-none d-md-inline">
+                  {item[field].status ? 'Pendiente' : 'Aprobar'}
+                </span>
+              </Button>
             )}
           </div>
         </td>
       </tr>
       {isVisible && (
         <tr>
-          <td colSpan="4">
+          <td colSpan="3">
             <div className="p-3 bg-light border-start border-primary border-4">
               <h6 className="fw-bold mb-3 text-primary">
                 <i className="bi bi-info-circle me-2"></i>
@@ -122,9 +106,6 @@ const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, actualiza
                 <h6 className="fw-bold text-secondary mb-2">Acciones disponibles:</h6>
                 <div className="d-flex flex-wrap gap-3">
                   <span className="badge bg-light text-dark">
-                    <i className="bi bi-arrow-clockwise me-1"></i> Actualizar documento
-                  </span>
-                  <span className="badge bg-light text-dark">
                     <i className="bi bi-check-circle me-1"></i> Aprobar/Marcar pendiente
                   </span>
                   <span className="badge bg-light text-dark">
@@ -145,7 +126,6 @@ DocumentRow.propTypes = {
   field: PropTypes.string.isRequired,
   detalleVisible: PropTypes.string,
   setDetalleVisible: PropTypes.func.isRequired,
-  actualizarDocumento: PropTypes.func.isRequired,
   toggleEstadoDocumento: PropTypes.func.isRequired,
 };
 
@@ -277,31 +257,6 @@ const DashboardData = () => {
       });
     } finally {
       setAnalyzing(false);
-    }
-  };
-
-  // Nueva función para actualizar un documento específico
-  const actualizarDocumento = async (managementId, field) => {
-    let loadingToast;
-    try {
-      loadingToast = toast.loading(`Actualizando ${field}...`);
-
-      await api.put(`/Data/${managementId}/${field}`);
-
-      toast.success('Documento actualizado exitosamente', {
-        id: loadingToast,
-        description: `El análisis de ${field} se ha actualizado`
-      });
-
-      // Recargar la lista
-      await fetchData();
-    } catch (error) {
-      console.error('Error al actualizar documento:', error);
-
-      toast.error('Error al actualizar el documento', {
-        id: loadingToast,
-        description: error.response?.data?.message || 'Error en el servidor'
-      });
     }
   };
 
@@ -553,10 +508,9 @@ const DashboardData = () => {
                         <Table hover className="mb-0">
                           <thead className="bg-light">
                             <tr>
-                              <th style={{ width: '25%' }}>Documento</th>
-                              <th style={{ width: '15%' }}>Estado</th>
-                              <th style={{ width: '30%' }}>Descripción</th>
-                              <th style={{ width: '30%' }}>Acciones</th>
+                              <th style={{ width: '40%' }}>Documento</th>
+                              <th style={{ width: '20%' }}>Estado</th>
+                              <th style={{ width: '40%' }}>Acciones</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -575,7 +529,6 @@ const DashboardData = () => {
                                   field={field}
                                   detalleVisible={detalleVisible}
                                   setDetalleVisible={setDetalleVisible}
-                                  actualizarDocumento={actualizarDocumento}
                                   toggleEstadoDocumento={toggleEstadoDocumento}
                                 />
                               ));
