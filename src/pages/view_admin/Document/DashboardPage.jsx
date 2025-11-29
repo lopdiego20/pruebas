@@ -12,6 +12,7 @@ const DashboardDocumentos = () => {
   const permissions = usePermissions();
   const [documentos, setDocumentos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [stats, setStats] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -54,7 +55,7 @@ const DashboardDocumentos = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      await Promise.all([fetchDocumentos(), fetchUsuarios()]);
+      await Promise.all([fetchDocumentos(), fetchUsuarios(), fetchStats()]);
     } catch (error) {
       console.error('Error al cargar datos:', error);
       toast.error('Error al cargar los datos iniciales');
@@ -67,7 +68,7 @@ const DashboardDocumentos = () => {
   const refreshData = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([fetchDocumentos(), fetchUsuarios()]);
+      await Promise.all([fetchDocumentos(), fetchUsuarios(), fetchStats()]);
       toast.success('Datos actualizados correctamente');
     } catch (error) {
       toast.error('Error al actualizar datos');
@@ -120,6 +121,18 @@ const DashboardDocumentos = () => {
     }
   };
 
+  const fetchStats = async () => {
+    try {
+      const res = await api.get('/Documents/stats');
+      if (res.data.success) {
+        setStats(res.data.data);
+        console.log('Stats cargados:', res.data.data);
+      }
+    } catch (error) {
+      console.error('Error al obtener stats:', error);
+    }
+  };
+
   const eliminarDocumento = async (documento) => {
     console.log('=== DEBUG ELIMINAR COMPLETO ===');
     console.log('documento completo:', documento);
@@ -168,7 +181,7 @@ const DashboardDocumentos = () => {
       // Asegurar que userContract es un string (ID)
       const contractId = typeof userContract === 'object' ? userContract._id || userContract.id : userContract;
 
-      await api.delete(`/Documents/${contractId}/document/${tipoDocumento}`);
+      await api.delete(`/Documents/${contractId}/${tipoDocumento}`);
 
       toast.success('Documento específico eliminado exitosamente', {
         id: loadingToast
@@ -389,6 +402,23 @@ const DashboardDocumentos = () => {
             </Button>
           </div>
         </div>
+
+        {stats && (
+          <div className="row mb-4">
+            {Object.entries(stats).map(([key, value]) => (
+              <div className="col-md-3 mb-3" key={key}>
+                <Card className="border-0 shadow-sm h-100">
+                  <Card.Body>
+                    <h6 className="text-muted text-uppercase small fw-bold mb-2">
+                      {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}
+                    </h6>
+                    <h3 className="fw-bold text-primary mb-0">{value}</h3>
+                  </Card.Body>
+                </Card>
+              </div>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-5">
