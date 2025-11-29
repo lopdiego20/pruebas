@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
 import Header from '../../../components/Header/Header';
 import api from '../../../services/api';
 
-const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, toggleEstadoDocumento }) => {
+const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, toggleEstadoDocumento, onAnalyze }) => {
   // Solo mostrar si el campo existe y tiene datos reales
   if (!item[field]?.description || item[field].description.includes('prueba') || item[field].description.includes('test')) return null;
 
@@ -53,6 +53,15 @@ const DocumentRow = ({ item, field, detalleVisible, setDetalleVisible, toggleEst
                 </span>
               </Button>
             )}
+
+            <Button
+              size="sm"
+              variant="outline-primary"
+              onClick={() => onAnalyze(documentManagementId, field)}
+              title="Ejecutar análisis individual"
+            >
+              <i className="bi bi-cpu"></i>
+            </Button>
           </div>
         </td>
       </tr>
@@ -127,6 +136,7 @@ DocumentRow.propTypes = {
   detalleVisible: PropTypes.string,
   setDetalleVisible: PropTypes.func.isRequired,
   toggleEstadoDocumento: PropTypes.func.isRequired,
+  onAnalyze: PropTypes.func.isRequired,
 };
 
 const DashboardData = () => {
@@ -142,12 +152,13 @@ const DashboardData = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        await Promise.all([fetchDocumentos(), fetchData(), fetchUsuarios()]);
+        await Promise.all([fetchDocumentos(), fetchData(), fetchUsuarios(), fetchStats()]);
       } catch (error) {
         console.error('Error al cargar datos iniciales:', error);
       } finally {
@@ -161,7 +172,7 @@ const DashboardData = () => {
   const refreshData = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([fetchDocumentos(), fetchData(), fetchUsuarios()]);
+      await Promise.all([fetchDocumentos(), fetchData(), fetchUsuarios(), fetchStats()]);
       toast.success('Datos actualizados correctamente');
     } catch (error) {
       console.error('Error al actualizar datos:', error);
@@ -210,6 +221,17 @@ const DashboardData = () => {
       toast.error('Error al cargar contratistas', {
         description: error.response?.data?.message || 'Error en el servidor'
       });
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await api.get('/Data/stats');
+      if (res.data.success) {
+        setStats(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error al obtener stats:', error);
     }
   };
 
@@ -279,6 +301,31 @@ const DashboardData = () => {
       console.error('Error al cambiar estado:', error);
 
       toast.error('Error al cambiar el estado', {
+        id: loadingToast,
+        description: error.response?.data?.message || 'Error en el servidor'
+      });
+    }
+  };
+
+  // Función para analizar un documento individual
+  const handleAnalyzeDocument = async (managementId, field) => {
+    let loadingToast;
+    try {
+      loadingToast = toast.loading(`Iniciando análisis de ${field.replaceAll(/([A-Z])/g, ' $1').toLowerCase()}...`);
+
+      // Se asume que el endpoint PUT dispara el análisis para este campo específico
+      await api.put(`/Data/${managementId}/${field}`);
+
+      toast.success('Análisis individual completado', {
+        id: loadingToast,
+        description: 'Los datos se han actualizado correctamente'
+      });
+
+      // Recargar datos
+      await fetchData();
+    } catch (error) {
+      console.error('Error al analizar documento:', error);
+      toast.error('Error al ejecutar el análisis', {
         id: loadingToast,
         description: error.response?.data?.message || 'Error en el servidor'
       });
@@ -378,6 +425,23 @@ const DashboardData = () => {
             </Button>
           </div>
         </div>
+
+        {stats && (
+          <div className="row mb-4">
+            {Object.entries(stats).map(([key, value]) => (
+              <div className="col-md-3 mb-3" key={key}>
+                <Card className="border-0 shadow-sm h-100">
+                  <Card.Body>
+                    <h6 className="text-muted text-uppercase small fw-bold mb-2">
+                      {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}
+                    </h6>
+                    <h3 className="fw-bold text-primary mb-0">{value}</h3>
+                  </Card.Body>
+                </Card>
+              </div>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-5">
@@ -530,6 +594,7 @@ const DashboardData = () => {
                                   detalleVisible={detalleVisible}
                                   setDetalleVisible={setDetalleVisible}
                                   toggleEstadoDocumento={toggleEstadoDocumento}
+                                  onAnalyze={handleAnalyzeDocument}
                                 />
                               ));
                             })}
@@ -673,7 +738,7 @@ const DashboardData = () => {
           </Form>
         </Modal.Body>
       </Modal>
-    </div>
+    </div >
   );
 };
 
