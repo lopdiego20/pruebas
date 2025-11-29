@@ -332,6 +332,23 @@ const DashboardData = () => {
     }
   };
 
+  // Función para eliminar un análisis completo
+  const handleDeleteAnalysis = async (id) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este análisis completo? Esta acción no se puede deshacer.')) {
+      try {
+        const loadingToast = toast.loading('Eliminando análisis...');
+        await api.delete(`/Data/${id}`);
+        toast.success('Análisis eliminado correctamente', { id: loadingToast });
+        await fetchData();
+      } catch (error) {
+        console.error('Error al eliminar análisis:', error);
+        toast.error('Error al eliminar el análisis', {
+          description: error.response?.data?.message || 'Error en el servidor'
+        });
+      }
+    }
+  };
+
   const agruparPorDocumento = () => {
     const agrupado = {};
 
@@ -586,17 +603,42 @@ const DashboardData = () => {
                                 'trainings', 'initiationRecord', 'accountCertification'
                               ];
 
-                              return documentFields.map(field => (
-                                <DocumentRow
-                                  key={`${item._id}-${field}`}
-                                  item={item}
-                                  field={field}
-                                  detalleVisible={detalleVisible}
-                                  setDetalleVisible={setDetalleVisible}
-                                  toggleEstadoDocumento={toggleEstadoDocumento}
-                                  onAnalyze={handleAnalyzeDocument}
-                                />
-                              ));
+                              return (
+                                <React.Fragment key={item._id}>
+                                  <tr className="table-secondary">
+                                    <td colSpan="2" className="align-middle">
+                                      <i className="bi bi-calendar-event me-2 text-muted"></i>
+                                      <span className="fw-bold text-dark small">
+                                        Análisis del {new Date(item.createdAt).toLocaleString()}
+                                      </span>
+                                      <span className="text-muted small ms-2">
+                                        (ID: {item._id.slice(-6)})
+                                      </span>
+                                    </td>
+                                    <td className="text-end">
+                                      <Button
+                                        variant="outline-danger"
+                                        size="sm"
+                                        onClick={() => handleDeleteAnalysis(item._id)}
+                                        title="Eliminar este análisis completo"
+                                      >
+                                        <i className="bi bi-trash me-1"></i> Eliminar
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                  {documentFields.map(field => (
+                                    <DocumentRow
+                                      key={`${item._id}-${field}`}
+                                      item={item}
+                                      field={field}
+                                      detalleVisible={detalleVisible}
+                                      setDetalleVisible={setDetalleVisible}
+                                      toggleEstadoDocumento={toggleEstadoDocumento}
+                                      onAnalyze={handleAnalyzeDocument}
+                                    />
+                                  ))}
+                                </React.Fragment>
+                              );
                             })}
                           </tbody>
                         </Table>
