@@ -11,7 +11,6 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
-import axios from "axios";
 import Header from "../../../../components/Header/Header";
 import "./User_Contract.css";
 import { toast } from "sonner";
@@ -138,9 +137,17 @@ export default function User_Contract() {
     const messageUserPut = toast.loading("Espere un poquito");
     try {
       const datosActualizados = { ...form };
-      if (!form.password) {
-        delete datosActualizados.password;
-      }
+
+      // Eliminar campos vacíos, nulos o indefinidos para no enviarlos
+      Object.keys(datosActualizados).forEach((key) => {
+        if (
+          datosActualizados[key] === "" ||
+          datosActualizados[key] === null ||
+          datosActualizados[key] === undefined
+        ) {
+          delete datosActualizados[key];
+        }
+      });
 
       const res = await api.put(
         `/Users/${idEditando}`,
@@ -201,19 +208,19 @@ export default function User_Contract() {
   // Abril el modal para editarlo
   const abrirModalEditar = (user) => {
     setForm({
-      firsName: user.user?.firsName || "",
-      lastName: user.user?.lastName || "",
-      idcard: user.user?.idcard || "",
-      telephone: user.user?.telephone || "",
-      email: user.user?.email || "",
+      firsName: "",
+      lastName: "",
+      idcard: "",
+      telephone: "",
+      email: "",
       password: "",
       role: "contratista",
-      post: user.user?.post || "",
-      state: user.user?.state || true,
-      contractId: user.contract?._id || "",
-      residentialAddress: user.residentialAddress || "",
-      institutionalEmail: user.institutionalEmail || "",
-      EconomicaActivityNumber: user.EconomicaActivityNumber || "",
+      post: "",
+      state: "",
+      contractId: "",
+      residentialAddress: "",
+      institutionalEmail: "",
+      EconomicaActivityNumber: "",
     });
     setIdEditando(user.user?._id);
     setModoEdicion(true);
@@ -271,7 +278,7 @@ export default function User_Contract() {
                       <th>Email</th>
                       <th>Rol</th>
                       <th>Cargo</th>
-                      <th>Estado</th>
+
                       <th className="pe-4 text-end">Acciones</th>
                     </tr>
                   </thead>
@@ -296,16 +303,7 @@ export default function User_Contract() {
                           </span>
                         </td>
                         <td>{contractor.user?.post || "-"}</td>
-                        <td>
-                          <span
-                            className={`badge ${contractor.user?.state === true
-                              ? "bg-success bg-opacity-10 text-success"
-                              : "bg-danger bg-opacity-10 text-danger"
-                              }`}
-                          >
-                            {contractor.user?.state ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
+
                         <td className="pe-4">
                           <div className="d-flex justify-content-end gap-2">
                             {permissions.canEdit.users && (
@@ -525,26 +523,7 @@ export default function User_Contract() {
                 </Form.Group>
               </Col>
 
-              <Col md={6}>
-                <Form.Group controlId="state">
-                  <Form.Label>Estado</Form.Label>
-                  <Form.Select
-                    name="state"
-                    value={form.state}
-                    onChange={(e) => setForm({ ...form, state: e.target.value === 'true' })}
-                    disabled={!modoEdicion}
-                    className={!modoEdicion ? "bg-light" : ""}
-                  >
-                    <option value={true}>Activo</option>
-                    <option value={false}>Inactivo</option>
-                  </Form.Select>
-                  {!modoEdicion && (
-                    <Form.Text className="text-muted">
-                      Los nuevos contratistas se crean como activos
-                    </Form.Text>
-                  )}
-                </Form.Group>
-              </Col>
+
             </Row>
           </Form>
         </Modal.Body>
