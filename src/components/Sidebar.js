@@ -46,9 +46,7 @@ export default function Sidebar() {
 
       localStorage.clear();
       navigate("/");
-    } else {
-
-    }
+    } 
   }
 
   return (

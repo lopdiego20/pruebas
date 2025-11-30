@@ -1,4 +1,4 @@
-// src/pages/DashboardData.jsx
+/* global globalThis */
 import React, { useEffect, useState } from 'react';
 import { Button, Table, Form, Modal, Spinner, Card, Badge } from 'react-bootstrap';
 import { toast } from 'sonner';
@@ -334,7 +334,7 @@ const DashboardData = () => {
 
   // Función para eliminar un análisis completo
   const handleDeleteAnalysis = async (id) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este análisis completo? Esta acción no se puede deshacer.')) {
+    if (globalThis.confirm('¿Estás seguro de que deseas eliminar este análisis completo? Esta acción no se puede deshacer.')) {
       try {
         const loadingToast = toast.loading('Eliminando análisis...');
         await api.delete(`/Data/${id}`);
@@ -450,9 +450,9 @@ const DashboardData = () => {
                 <Card className="border-0 shadow-sm h-100">
                   <Card.Body>
                     <h6 className="text-muted text-uppercase small fw-bold mb-2">
-                      {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}
+                      {key.replaceAll(/([A-Z])/g, ' $1').replaceAll(/_/g, ' ').trim()}
                     </h6>
-                    <h3 className="fw-bold text-primary mb-0">{value}</h3>
+                    <h3 className="fw-bold text-primary mb-0">{value < 0 ? 0 : value}</h3>
                   </Card.Body>
                 </Card>
               </div>
