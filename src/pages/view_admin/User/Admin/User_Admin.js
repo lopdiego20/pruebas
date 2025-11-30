@@ -50,7 +50,7 @@ export default function TablaUsuarios() {
         setError("No se pudieron cargar los usuarios");
       }
     } catch (err) {
-      console.error('Error al obtener usuarios:', err);
+
       setError(err.response?.data?.message || 'Error al cargar usuarios');
       toast.error("Error al cargar los usuarios", {
         description: err.response?.data?.message || 'Error en el servidor',

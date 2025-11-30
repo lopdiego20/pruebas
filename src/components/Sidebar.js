@@ -31,26 +31,23 @@ export default function Sidebar() {
   // Obtener el rol del usuario
   const userRole = localStorage.getItem('role') || ROLES.CONTRATISTA;
 
-  // Debug: Verificar rol del usuario
-  console.log('👤 [SIDEBAR] Rol del usuario:', userRole);
-  console.log('👤 [SIDEBAR] ROLES disponibles:', ROLES);
+
 
   const toggleMenu = () => {
-    console.log('🔧 [SIDEBAR] toggleMenu llamado, estado actual:', open);
+
     setOpen(!open);
   };
 
   const cerrarSesion = () => {
-    console.log('🚨 [SIDEBAR] cerrarSesion() fue llamado!');
-    console.log('🚨 [SIDEBAR] Stack trace:', new Error("error en SIDEBAR").stack);
+
 
     // Confirmar antes de cerrar sesión
     if (typeof globalThis !== "undefined" && globalThis.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-      console.log('🚨 [SIDEBAR] Usuario confirmó cerrar sesión');
+
       localStorage.clear();
       navigate("/");
     } else {
-      console.log('🚨 [SIDEBAR] Usuario canceló cerrar sesión');
+
     }
   }
 
@@ -150,7 +147,7 @@ export default function Sidebar() {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('🚨 [SIDEBAR] Click en botón cerrar sesión');
+
               toggleMenu();
               cerrarSesion();
             }}
