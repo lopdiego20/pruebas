@@ -55,7 +55,7 @@ export default function User_Funcionary() {
       // Usar el endpoint específico para funcionarios
       const res = await api.get(`/Users/Funcionary?state=true`);
       if (res.data.success) {
-        setUsuariosF(res.data.data);
+        setUsuariosF(res.data.data || []);
       } else {
         setError("No se pudieron cargar los usuarios");
       }
@@ -242,6 +242,12 @@ export default function User_Funcionary() {
                 <i className="bi bi-exclamation-triangle-fill me-2"></i>
                 {error}
               </Alert>
+            ) : usuariosf.length === 0 ? (
+              <div className="text-center py-5">
+                <i className="bi bi-people text-muted" style={{ fontSize: '3rem' }}></i>
+                <p className="mt-3 text-muted fw-medium">No hay funcionarios registrados</p>
+                <p className="text-muted small">Haz clic en "Agregar Funcionario" para crear uno nuevo.</p>
+              </div>
             ) : (
               <div className="table-responsive">
                 <Table hover className="mb-0">
