@@ -45,7 +45,7 @@ const DashboardDocumentos = () => {
       return;
     }
 
-    if (role && !['admin', 'funcionario'].includes(role.toLowerCase())) {
+    if (role && !['admin', 'funcionario', 'contratista'].includes(role.toLowerCase())) {
       toast.error('No tienes permisos para acceder a esta sección');
       navigate('/');
       return;
@@ -83,11 +83,40 @@ const DashboardDocumentos = () => {
 
   const fetchDocumentos = async () => {
     try {
-      const res = await api.get('/Documents');
+      const role = localStorage.getItem('role')?.toLowerCase();
+      let url = '/Documents';
+
+      if (role === 'contratista') {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (user?._id) {
+          try {
+            // Obtener el ID del contratista asociado al usuario logueado
+            const resContractors = await api.get('/Users/Contractor?state=true');
+            if (resContractors.data.success) {
+              const myContractor = resContractors.data.data.find(c => c.user?._id === user._id);
+              if (myContractor) {
+                url = `/Documents/${myContractor._id}`;
+              } else {
+                console.warn('No se encontró perfil de contratista para el usuario actual');
+                setDocumentos([]);
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('Error al obtener información del contratista:', err);
+            setDocumentos([]);
+            return;
+          }
+        }
+      }
+
+      const res = await api.get(url);
 
       if (res.data.success) {
-        setDocumentos(res.data.data);
-        console.log('Documentos cargados:', res.data.data);
+        // Asegurarse de que sea un array
+        const docs = Array.isArray(res.data.data) ? res.data.data : [res.data.data];
+        setDocumentos(docs);
+        console.log('Documentos cargados:', docs);
       } else {
         toast.error('Error al cargar documentos');
         setDocumentos([]);
@@ -207,13 +236,28 @@ const DashboardDocumentos = () => {
 
   const abrirModalCrear = () => {
     setModoEdicion(false);
+
+    // Auto-seleccionar si es contratista
+    let initialUserContract = '';
+    if (permissions.isContratista) {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const myContractor = usuarios.find(u => u.user?._id === user?._id);
+        if (myContractor) {
+          initialUserContract = myContractor._id;
+        }
+      } catch (error) {
+        console.error('Error al obtener usuario local:', error);
+      }
+    }
+
     setFormData({
       description: '',
       state: 'Activo',
       retention_time: '5',
       version: 1,
       ip: window.location.hostname,
-      user_contrac: '',
+      user_contrac: initialUserContract,
       _id_gestion: ''
     });
     setFiles({});
@@ -570,6 +614,7 @@ const DashboardDocumentos = () => {
                 onChange={handleInputChange}
                 required
                 className="py-2"
+                disabled={permissions.isContratista}
               >
                 <option value="">Seleccione un usuario contratista</option>
                 {usuarios.map((contractor) => (

@@ -437,7 +437,14 @@ const DashboardData = () => {
             <Button variant="outline-primary" onClick={exportarExcelCompleto}>
               <i className="bi bi-file-excel me-2"></i>Exportar Todo
             </Button>
-            <Button variant="primary" onClick={() => setShowModal(true)}>
+            <Button variant="primary" onClick={() => {
+              const role = localStorage.getItem('role')?.toLowerCase();
+              if (role === 'contratista') {
+                toast.error('No tienes permisos para realizar esta acción');
+                return;
+              }
+              setShowModal(true);
+            }}>
               <i className="bi bi-plus-circle me-2"></i>Nuevo Análisis
             </Button>
           </div>

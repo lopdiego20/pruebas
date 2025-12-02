@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Badge, Button, Spinner, Table } from 'react-bootstrap';
-import { 
-  PersonFill, 
-  FileEarmarkTextFill, 
+import {
+  PersonFill,
+  FileEarmarkTextFill,
   BarChartFill,
   ArrowRightShort,
   ClockHistory,
@@ -91,7 +91,7 @@ const ContratistaDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Obtener información del usuario contratista logueado
       const user = JSON.parse(localStorage.getItem("user"));
       const userId = user?._id;
@@ -118,16 +118,16 @@ const ContratistaDashboard = () => {
       const [documentsRes, dataRes, contractorRes, contractsRes] = results;
 
       // Filtrar documentos y análisis del contratista actual
-      const userDocuments = documentsRes.data.data.filter(doc => 
+      const userDocuments = documentsRes.data.data.filter(doc =>
         doc.userContract === userId || doc.user_create === userId
       );
-      
-      const userAnalysis = dataRes.data.data.filter(analysis => 
+
+      const userAnalysis = dataRes.data.data.filter(analysis =>
         userDocuments.some(doc => doc._id === analysis.document_management)
       );
 
       // Obtener información del contrato del contratista
-      const contractorInfo = contractorRes.data.data.find(contractor => 
+      const contractorInfo = contractorRes.data.data.find(contractor =>
         contractor.user?._id === userId
       );
 
@@ -161,7 +161,7 @@ const ContratistaDashboard = () => {
 
   const toggleProfileDetails = () => {
     setShowProfileDetails(!showProfileDetails);
-    
+
     // Debug: mostrar los datos del usuario en consola
     if (!showProfileDetails) {
       console.log('=== DEBUG: Datos del usuario ===');
@@ -204,9 +204,9 @@ const ContratistaDashboard = () => {
     <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       {/* Agregar estilos CSS */}
       <style>{hoverStyles}</style>
-      
+
       <Header />
-      
+
       <Container fluid className="px-4 py-4">
         <Row className="g-4 mb-4">
           <Col>
@@ -257,8 +257,8 @@ const ContratistaDashboard = () => {
                       </div>
                     </div>
                     {contractInfo.contract && (
-                      <Button 
-                        variant="outline-info" 
+                      <Button
+                        variant="outline-info"
                         onClick={toggleContractDetails}
                       >
                         {showContractDetails ? 'Ocultar Detalles' : 'Ver Detalles'}
@@ -286,7 +286,7 @@ const ContratistaDashboard = () => {
                   <Table responsive striped hover className="mb-0">
                     <tbody>
                       <tr>
-                        <td className="fw-semibold text-muted" style={{width: '30%'}}>Número de Contrato</td>
+                        <td className="fw-semibold text-muted" style={{ width: '30%' }}>Número de Contrato</td>
                         <td>#{contractInfo.contract.contractNumber || 'No especificado'}</td>
                       </tr>
                       <tr>
@@ -296,12 +296,12 @@ const ContratistaDashboard = () => {
                       <tr>
                         <td className="fw-semibold text-muted">Fecha de Inicio</td>
                         <td>
-                          {contractInfo.contract.startDate 
+                          {contractInfo.contract.startDate
                             ? new Date(contractInfo.contract.startDate).toLocaleDateString('es-ES', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })
                             : 'No especificada'
                           }
                         </td>
@@ -309,12 +309,12 @@ const ContratistaDashboard = () => {
                       <tr>
                         <td className="fw-semibold text-muted">Fecha de Finalización</td>
                         <td>
-                          {contractInfo.contract.endDate 
+                          {contractInfo.contract.endDate
                             ? new Date(contractInfo.contract.endDate).toLocaleDateString('es-ES', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })
                             : 'No especificada'
                           }
                         </td>
@@ -330,7 +330,7 @@ const ContratistaDashboard = () => {
                       <tr>
                         <td className="fw-semibold text-muted">Valor del Período</td>
                         <td>
-                          {contractInfo.contract.periodValue 
+                          {contractInfo.contract.periodValue
                             ? `$${parseInt(contractInfo.contract.periodValue).toLocaleString('es-ES')}`
                             : 'No especificado'
                           }
@@ -339,7 +339,7 @@ const ContratistaDashboard = () => {
                       <tr>
                         <td className="fw-semibold text-muted">Valor Total</td>
                         <td>
-                          {contractInfo.contract.totalValue 
+                          {contractInfo.contract.totalValue
                             ? `$${parseInt(contractInfo.contract.totalValue).toLocaleString('es-ES')}`
                             : 'No especificado'
                           }
@@ -347,7 +347,7 @@ const ContratistaDashboard = () => {
                       </tr>
                       <tr>
                         <td className="fw-semibold text-muted">Objetivo del Contrato</td>
-                        <td style={{whiteSpace: 'pre-wrap'}}>
+                        <td style={{ whiteSpace: 'pre-wrap' }}>
                           {contractInfo.contract.objectiveContract || 'No especificado'}
                         </td>
                       </tr>
@@ -406,8 +406,8 @@ const ContratistaDashboard = () => {
                 </div>
               </Card.Body>
               <Card.Footer className="bg-transparent border-0 py-3">
-                <button 
-                  onClick={() => navigate('/contratista/documentos')}
+                <button
+                  onClick={() => navigate('/Document')}
                   className="btn btn-link text-primary text-decoration-none small fw-semibold p-0"
                 >
                   Gestionar documentos <ArrowRightShort size={18} />
@@ -437,8 +437,8 @@ const ContratistaDashboard = () => {
                 </div>
               </Card.Body>
               <Card.Footer className="bg-transparent border-0 py-3">
-                <button 
-                  onClick={() => navigate('/contratista/documentos')}
+                <button
+                  onClick={() => navigate('/Document')}
                   className="btn btn-link text-warning text-decoration-none small fw-semibold p-0"
                 >
                   Ver pendientes <ArrowRightShort size={18} />
@@ -468,8 +468,8 @@ const ContratistaDashboard = () => {
                 </div>
               </Card.Body>
               <Card.Footer className="bg-transparent border-0 py-3">
-                <button 
-                  onClick={() => navigate('/contratista/datos')}
+                <button
+                  onClick={() => navigate('/Data')}
                   className="btn btn-link text-success text-decoration-none small fw-semibold p-0"
                 >
                   Ver análisis <ArrowRightShort size={18} />
@@ -499,7 +499,7 @@ const ContratistaDashboard = () => {
                 </div>
               </Card.Body>
               <Card.Footer className="bg-transparent border-0 py-3">
-                <button 
+                <button
                   onClick={toggleProfileDetails}
                   className="btn btn-link text-info text-decoration-none small fw-semibold p-0"
                 >
@@ -525,7 +525,7 @@ const ContratistaDashboard = () => {
                   <Table responsive striped hover className="mb-0">
                     <tbody>
                       <tr>
-                        <td className="fw-semibold text-muted" style={{width: '30%'}}>
+                        <td className="fw-semibold text-muted" style={{ width: '30%' }}>
                           <PersonFill className="me-2 text-primary" />
                           Nombre Completo
                         </td>
@@ -646,14 +646,14 @@ const ContratistaDashboard = () => {
                           {(() => {
                             try {
                               const user = JSON.parse(localStorage.getItem("user"));
-                              return user?.createdAt 
+                              return user?.createdAt
                                 ? new Date(user.createdAt).toLocaleDateString('es-ES', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
                                 : 'No especificada';
                             } catch {
                               return 'No especificada';
@@ -700,8 +700,8 @@ const ContratistaDashboard = () => {
                   <div>
                     <h6 className="mb-1 fw-semibold text-dark">Información de Permisos</h6>
                     <p className="mb-0 text-muted small">
-                      Como contratista, puedes <strong>consultar</strong> contratos y gestionar tus documentos, 
-                      pero no puedes crear, editar o eliminar contratos. 
+                      Como contratista, puedes <strong>consultar</strong> contratos y gestionar tus documentos,
+                      pero no puedes crear, editar o eliminar contratos.
                       Para realizar esas acciones, contacta con un administrador o funcionario.
                     </p>
                   </div>

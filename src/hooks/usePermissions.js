@@ -36,7 +36,7 @@ export const usePermissions = () => {
       // Permisos de visualización
       users: userRole === 'admin' || userRole === 'funcionario', // Admin y funcionario pueden ver todos los usuarios
       contracts: userRole === 'admin' || userRole === 'funcionario', // Admin y funcionario pueden ver todos los contratos
-      documents: userRole === 'admin' || userRole === 'funcionario', // Admin y funcionario pueden ver todos los documentos
+      documents: userRole === 'admin' || userRole === 'funcionario' || userRole === 'contratista', // Admin, funcionario y contratista pueden ver todos los documentos
       data: userRole === 'admin' || userRole === 'funcionario' // Admin y funcionario pueden ver todos los análisis
     };
 
